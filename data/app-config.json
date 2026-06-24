@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "demoMode": {
+    "enabled": true,
+    "source": "demo-data.json"
+  },
+  "device": {
+    "deviceId": "device-unassigned",
+    "label": "Tablet nieprzypisany"
+  },
+  "currentUser": null,
+  "events": [],
+  "teams": [],
+  "users": [],
+  "roles": [],
+  "permissions": [],
+  "competitions": [
+    {
+      "id": "competition-zwirownia",
+      "eventId": null,
+    "name": "Żwirownia",
+      "code": "ZWIROWNIA",
+      "rankingOrder": 1,
+      "timer": {
+        "durationSeconds": 600,
+        "warningThresholdSeconds": 120
+      },
+      "parts": [
+        {
+          "id": "competition-part-zwirownia-main",
+          "name": "Żwirownia",
+          "code": "ZWIROWNIA",
+          "cardTemplateId": "card-template-zwirownia-2026",
+          "weight": 1
+        }
+      ],
+      "deletedAt": null,
+      "deletedBy": null
+    }
+  ],
+  "cardTemplates": [
+    "card-template-zwirownia-2026.json"
+  ],
+  "deviceAssignments": [],
+  "appeals": []
+}

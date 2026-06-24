@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Apka Mistrzostwa - awaryjne demo</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #d9d2c5; color: #181715; }
+    header { background: #25302d; color: #fff; padding: 14px 18px; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    main { padding: 18px; display: grid; gap: 16px; }
+    section { background: #f4f1ea; border: 2px solid #9f978a; border-radius: 8px; padding: 18px; }
+    h1, h2 { margin: 0 0 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+    .team { background: #fff; border: 2px solid #111; border-radius: 6px; padding: 14px; display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: center; }
+    .team span { font-size: 44px; font-weight: 900; text-align: center; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { border: 1px solid #b8b0a4; padding: 10px; text-align: left; }
+    th { background: #e7dfd2; }
+    .notice { background: #fff9e7; border-color: #111; }
+    .badge { display: inline-block; padding: 5px 8px; border-radius: 999px; background: #fff0d8; color: #9a5200; font-weight: 900; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Apka Mistrzostwa - awaryjne demo</strong>
+    <span>Podgląd przez dwuklik, bez serwera</span>
+  </header>
+  <main>
+    <section class="notice">
+      <h1>To jest awaryjny podgląd</h1>
+      <p>Pełne PWA uruchamia plik <strong>Uruchom demo.cmd</strong>, gdy dostępny jest lokalny Node.js. Ten widok pozwala obejrzeć dane demo bez instalowania Pythona i bez serwera.</p>
+    </section>
+    <section>
+      <h2>Przykładowe zespoły</h2>
+      <div class="grid">
+        <div class="team"><span>01</span><strong>Kraków</strong></div>
+        <div class="team"><span>02</span><strong>Gdańsk</strong></div>
+        <div class="team"><span>03</span><strong>Poznań</strong></div>
+        <div class="team"><span>04</span><strong>Wrocław</strong></div>
+      </div>
+    </section>
+    <section>
+      <h2>Przykladowy ranking</h2>
+      <table>
+        <thead><tr><th>Miejsce</th><th>Zespół</th><th>Konkurencje</th><th>Suma</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>01 - Kraków</td><td>Żwirownia</td><td><strong>150</strong></td></tr>
+          <tr><td>2</td><td>02 - Gdańsk</td><td>Żwirownia</td><td><strong>132</strong></td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Dostępne karty ocen</h2>
+      <p>Aktualne demo zawiera jedną kartę oceny: <strong>Żwirownia</strong>.</p>
+      <p>Pełne demo pokazuje kartę po wskazaniu zespołu.</p>
+    </section>
+    <section>
+      <h2>Synchronizacja i audyt</h2>
+      <p><span class="badge">queued</span> Przykładowa operacja synchronizacji czeka na wysłanie.</p>
+      <p>Audyt: <strong>score_sheet.approve</strong>, wynik 150, użytkownik Sędzia Demo.</p>
+    </section>
+    <section>
+      <h2>Licznik czasu konkurencji</h2>
+      <p><strong>10:00</strong> domyślnie, start wyłącznie po kliknięciu Start, funkcje: Start, Pauza, Wznów, Reset, dźwięk włączony/wyłączony.</p>
+      <p>Czas jest konfigurowany per konkurencja przez `timer.durationSeconds`.</p>
+      <p>W pełnym demo licznik zmienia kolor przy 2:00, odtwarza pojedynczy sygnał i zatrzymuje się na 0:00.</p>
+    </section>
+  </main>
+</body>
+</html>

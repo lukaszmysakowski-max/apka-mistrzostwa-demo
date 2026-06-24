@@ -1,0 +1,138 @@
+{
+  "id": "card-template-zwirownia-2026",
+  "schemaVersion": 2,
+  "competitionId": "competition-zwirownia",
+  "competitionPartId": "competition-part-zwirownia-main",
+  "name": "KONKURENCJA \"ŻWIROWNIA\"",
+  "version": 1,
+  "status": "published",
+  "maxPoints": 165,
+  "scoringMode": "yes_no_points",
+  "deletedAt": null,
+  "deletedBy": null,
+  "layout": {
+    "mode": "paper_like",
+    "paper": "A4-landscape-scaled",
+    "columns": [
+      { "id": "criterion", "label": "", "width": "auto" },
+      { "id": "yes", "label": "tak", "width": 72 },
+      { "id": "no", "label": "nie", "width": 72 },
+      { "id": "points", "label": "pkt", "width": 64 }
+    ],
+    "notes": [
+      "1 - w przypadku zabezpieczenia GDO za pomocą alternatywnych metod przyznajemy punkty również za NG/UG.",
+      "2 - w przypadku zastosowania innych opatrunków rany przekrwawiające.",
+      "3 - przygotowanie do ewakuacji oznacza zabezpieczenie na noszach transportowych, ewakuacja oznacza przejechanie przez wyznaczony punkt."
+    ]
+  },
+  "sections": [
+    {
+      "id": "bezpieczenstwo",
+      "title": "BEZPIECZEŃSTWO",
+      "group": "safety",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "bezp_ocena",
+          "label": "Ocena bezpieczeństwa",
+          "type": "yes_no",
+          "points": 5,
+          "required": true,
+          "commentAllowed": true,
+          "group": "safety",
+          "visibilityConditions": [],
+          "validationRules": [
+            { "type": "required", "message": "Zaznacz TAK albo NIE." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ocena_wstepna",
+      "title": "OCENA WSTĘPNA",
+      "group": "assessment",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        { "id": "a_droznosc", "label": "A - drożność d.o. Drożne", "type": "yes_no", "points": 5, "required": true, "commentAllowed": true, "group": "assessment.airway", "visibilityConditions": [], "validationRules": [{ "type": "required" }] },
+        { "id": "b_oddech", "label": "B - ocena oddechu 1/10 s", "type": "yes_no", "points": 5, "required": true, "commentAllowed": true, "group": "assessment.breathing", "visibilityConditions": [], "validationRules": [{ "type": "required" }] },
+        { "id": "c_krwawienia", "label": "C - widoczne krwawienia z wielu miejsc", "type": "yes_no", "points": 15, "required": true, "commentAllowed": true, "group": "assessment.circulation", "visibilityConditions": [], "validationRules": [{ "type": "required" }] },
+        { "id": "c_tetno", "label": "C - tętno 20/10 s", "type": "yes_no", "points": 0, "required": true, "commentAllowed": true, "group": "assessment.circulation", "visibilityConditions": [], "validationRules": [{ "type": "required" }] },
+        { "id": "swiadomosc", "label": "Ocena stanu świadomości ACVPU-U", "type": "yes_no", "points": 10, "required": true, "commentAllowed": true, "group": "assessment.disability", "visibilityConditions": [], "validationRules": [{ "type": "required" }] }
+      ]
+    },
+    {
+      "id": "gdo",
+      "title": "ZABEZPIECZENIE GDO 1",
+      "group": "interventions.airway",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        { "id": "gdo_rurka", "label": "Zabezpieczenie GDO rurka UG/NG", "type": "yes_no", "points": 15, "required": false, "commentAllowed": true, "group": "interventions.airway", "visibilityConditions": [], "validationRules": [] },
+        { "id": "gdo_alt", "label": "Zabezpieczenie GDO alternatywa", "type": "yes_no", "points": 15, "required": false, "commentAllowed": true, "group": "interventions.airway", "visibilityConditions": [], "validationRules": [] },
+        { "id": "wentylacja", "label": "Wentylacja wspomagana", "type": "yes_no", "points": 15, "required": false, "commentAllowed": true, "group": "interventions.airway", "visibilityConditions": [], "validationRules": [] }
+      ]
+    },
+    {
+      "id": "krwawienia",
+      "title": "ZABEZPIECZENIE KRWAWIEŃ 2",
+      "group": "interventions.bleeding",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        { "id": "ramie_opatrunek", "label": "Lewe ramię - opatrunek uciskowy", "type": "yes_no", "points": 15, "required": false, "commentAllowed": true, "group": "interventions.bleeding", "visibilityConditions": [], "validationRules": [] },
+        { "id": "pachwina_packing", "label": "Prawa pachwina - packing", "type": "yes_no", "points": 15, "required": false, "commentAllowed": true, "group": "interventions.bleeding", "visibilityConditions": [], "validationRules": [] },
+        { "id": "udo_opaska", "label": "Lewe udo - opaska uciskowa / staza taktyczna", "type": "yes_no", "points": 15, "required": false, "commentAllowed": true, "group": "interventions.bleeding", "visibilityConditions": [], "validationRules": [] }
+      ]
+    },
+    {
+      "id": "kluczowe_interwencje",
+      "title": "KLUCZOWE INTERWENCJE",
+      "group": "interventions.core",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        { "id": "tlenoterapia", "label": "Tlenoterapia", "type": "yes_no", "points": 10, "required": false, "commentAllowed": true, "group": "interventions.core", "visibilityConditions": [], "validationRules": [] }
+      ]
+    },
+    {
+      "id": "dalsze_dzialania",
+      "title": "DALSZE DZIAŁANIA",
+      "group": "handover",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        { "id": "przekazanie", "label": "Przekazanie poszkodowanego do ZRM", "type": "yes_no", "points": 5, "required": false, "commentAllowed": true, "group": "handover", "visibilityConditions": [], "validationRules": [] },
+        { "id": "lider", "label": "Postawa lidera zespołu", "type": "yes_no", "points": 5, "required": false, "commentAllowed": true, "group": "teamwork", "visibilityConditions": [], "validationRules": [] },
+        { "id": "sytuacja", "label": "Świadomość sytuacyjna zespołu", "type": "yes_no", "points": 5, "required": false, "commentAllowed": true, "group": "teamwork", "visibilityConditions": [], "validationRules": [] }
+      ]
+    },
+    {
+      "id": "ewakuacja",
+      "title": "EWAKUACJA 3",
+      "group": "evacuation",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        { "id": "przygotowanie", "label": "Przygotowanie do ewakuacji", "type": "yes_no", "points": 5, "required": false, "commentAllowed": true, "group": "evacuation", "visibilityConditions": [], "validationRules": [] },
+        { "id": "ewakuacja", "label": "Ewakuacja", "type": "yes_no", "points": 5, "required": false, "commentAllowed": true, "group": "evacuation", "visibilityConditions": [], "validationRules": [] }
+      ]
+    }
+  ],
+  "validationRules": [
+    {
+      "type": "maxScore",
+      "value": 165,
+      "message": "Suma punktów nie może przekroczyć maksimum karty."
+    }
+  ],
+  "visibilityConditions": [],
+  "rules": [
+    { "id": "card_total", "type": "sum_yes_points", "target": "finalScore" }
+  ],
+  "export": {
+    "pdf": true,
+    "includeAuditHistory": "optional"
+  }
+}

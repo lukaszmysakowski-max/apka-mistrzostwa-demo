@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f1ea">
+  <title>Karty OMRM - MVP klient offline</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <strong>OMRM</strong>
+      <span id="deviceLabel">Tablet</span>
+    </div>
+    <nav aria-label="Widoki">
+      <button class="tab active" data-view="team-screen">Zespół</button>
+      <button class="tab" data-view="ranking-screen">Ranking</button>
+      <button class="tab" data-view="audit-screen">Audyt</button>
+      <button class="tab" data-view="sync-screen">Sync</button>
+    </nav>
+    <div class="sync-pill" id="syncPill">Ładowanie</div>
+  </header>
+
+  <main>
+    <section id="team-screen" class="view active touch-screen">
+      <div class="workflow-panel">
+        <p class="eyebrow">Wybór zespołu</p>
+        <h1>Wybierz zespół do oceny</h1>
+        <p class="muted">Lista pochodzi z lokalnego cache. Po podłączeniu API będzie uzupełniana synchronizacją z serwera.</p>
+        <div id="teamList" class="team-list"></div>
+      </div>
+    </section>
+
+    <section id="start-screen" class="view touch-screen">
+      <div class="workflow-panel high-contrast">
+        <p class="eyebrow">Rozpoczęcie oceny</p>
+        <div class="huge-number" id="startTeamNumber">--</div>
+        <h1 id="startTeamName">Zespół</h1>
+        <label>
+          Konkurencja / karta
+          <select id="assignmentSelect"></select>
+        </label>
+        <div class="action-row">
+          <button class="secondary" data-view-target="team-screen">Zmień zespół</button>
+          <button id="startAssessmentBtn">Rozpocznij ocenę</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="card-screen" class="view">
+      <article class="paper-shell" aria-label="Karta ocen">
+        <div class="paper-toolbar">
+          <div class="team-chip">
+            <span>Zespół</span>
+            <strong id="cardTeamNumber">--</strong>
+          </div>
+          <section class="competition-timer" id="competitionTimer" aria-live="polite">
+            <div class="timer-label">Czas konkurencji</div>
+            <div class="timer-display" id="timerDisplay">10:00</div>
+            <div class="timer-message" id="timerMessage"></div>
+            <div class="timer-controls">
+              <button type="button" id="timerStartBtn">Start</button>
+              <button type="button" id="timerPauseBtn" class="secondary">Pauza</button>
+              <button type="button" id="timerResumeBtn" class="secondary">Wznów</button>
+              <button type="button" id="timerResetBtn" class="secondary">Reset 10:00</button>
+              <button type="button" id="timerSoundBtn" class="secondary">Dźwięk: włączony</button>
+            </div>
+          </section>
+          <div class="paper-total">Suma <strong id="totalScore">0</strong> / <span id="maxScore">0</span></div>
+          <button id="finishAssessmentBtn">Zakończ ocenę</button>
+        </div>
+
+        <form id="scoreCard" class="score-card">
+          <div class="paper-title">
+            <h1 id="cardTitle">Karta ocen</h1>
+            <label>Zespół nr <input id="teamNumber" readonly></label>
+          </div>
+          <div id="columnsHead" class="columns-head"></div>
+          <div id="sections"></div>
+          <footer class="paper-notes" id="paperNotes"></footer>
+        </form>
+      </article>
+    </section>
+
+    <section id="finish-screen" class="view touch-screen">
+      <div class="workflow-panel high-contrast">
+        <p class="eyebrow">Zakończenie oceny</p>
+        <div class="huge-number" id="finishTeamNumber">--</div>
+        <h1 id="finishSummary">Suma punktów: 0</h1>
+        <div id="validationBox" class="validation-box"></div>
+        <div class="action-row">
+          <button class="secondary" data-view-target="card-screen">Wróć do karty</button>
+          <button id="approveBtn">Zatwierdź wynik</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="confirm-screen" class="view touch-screen">
+      <div class="workflow-panel">
+        <p class="eyebrow">Potwierdzenie zapisu</p>
+        <h1>Wynik zapisany lokalnie</h1>
+        <p class="muted">Karta ma snapshot zatwierdzenia i operacje oczekujące w kolejce synchronizacji.</p>
+        <dl class="summary-list">
+          <div><dt>Zespół</dt><dd id="confirmTeam">--</dd></div>
+          <div><dt>Wynik</dt><dd id="confirmScore">--</dd></div>
+          <div><dt>Status</dt><dd id="confirmStatus">queued</dd></div>
+        </dl>
+        <div class="action-row">
+          <button data-view-target="team-screen">Wróć do wyboru zespołu</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="sync-error-screen" class="view touch-screen">
+      <div class="workflow-panel sync-error">
+        <p class="eyebrow">Błąd synchronizacji</p>
+        <h1>Operacje pozostają w kolejce</h1>
+        <p id="syncErrorText">Backend API nie jest jeszcze skonfigurowane.</p>
+        <div class="action-row">
+          <button id="retrySyncBtn">Ponów synchronizację</button>
+          <button class="secondary" data-view-target="team-screen">Wróć</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="ranking-screen" class="view">
+      <div class="wide-panel">
+        <h2>Klasyfikacja generalna</h2>
+        <p class="muted">Ranking powstaje wyłącznie z zatwierdzonych i zapisanych wyników. Brak sztucznie generowanych wyników cząstkowych.</p>
+        <table>
+          <thead><tr><th>Miejsce</th><th>Zespół</th><th>Ukończone konkurencje</th><th>Suma</th></tr></thead>
+          <tbody id="rankingBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="audit-screen" class="view">
+      <div class="wide-panel">
+        <h2>Dziennik aktywności i zmian</h2>
+        <table>
+          <thead><tr><th>Czas</th><th>Akcja</th><th>Encja</th><th>Pole</th><th>Poprzednio</th><th>Nowo</th><th>Wersja</th></tr></thead>
+          <tbody id="auditBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="sync-screen" class="view">
+      <div class="wide-panel">
+        <h2>Kolejka synchronizacji</h2>
+        <p class="muted">Operacje są idempotentne dzięki `client_operation_id` i gotowe do wysłania do backendu.</p>
+        <button id="syncNowBtn">Synchronizuj teraz</button>
+        <table>
+          <thead><tr><th>Status</th><th>Typ</th><th>Encja</th><th>Wersja</th><th>Próby</th><th>Client operation ID</th></tr></thead>
+          <tbody id="syncBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
