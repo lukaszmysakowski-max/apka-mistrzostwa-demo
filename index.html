@@ -52,9 +52,15 @@
     <section id="card-screen" class="view">
       <article class="paper-shell" aria-label="Karta ocen">
         <div class="paper-toolbar">
-          <div class="team-chip">
-            <span id="cardTaskLabel">Zadanie</span>
-            <strong id="cardTaskName">--</strong>
+          <div class="team-chip logo-panel">
+            <!-- Logo mistrzostw: assets/images/logo.jpg -->
+            <img
+              class="championship-logo"
+              src="assets/images/logo.jpg"
+              alt="Logo mistrzostw"
+              onerror="this.hidden=true">
+            <span id="cardTaskLabel" hidden></span>
+            <strong id="cardTaskName" hidden></strong>
           </div>
           <section class="competition-timer" id="competitionTimer" aria-live="polite">
             <div class="timer-label">Czas konkurencji</div>
@@ -161,6 +167,12 @@
       </div>
     </section>
   </main>
+
+  <footer class="version-footer" aria-label="Informacje o wersji">
+    <strong>Demo v0.1</strong>
+    <span>Wersja demonstracyjna</span>
+    <time datetime="2026-06-30">30.06.2026</time>
+  </footer>
 
   <script type="module" src="app.js"></script>
 </body>

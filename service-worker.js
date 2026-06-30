@@ -1,4 +1,4 @@
-const CACHE = "omrm-mvp-client-v20";
+const CACHE = "omrm-mvp-client-v24";
 const ASSETS = [
   "./",
   "./index.html",
@@ -26,7 +26,8 @@ const ASSETS = [
   "./data/card-template-kill-bill-2026.json",
   "./data/card-template-trainspotting-2026.json",
   "./manifest.json",
-  "./icon.svg"
+  "./icon.svg",
+  "./assets/images/logo.jpg"
 ];
 
 self.addEventListener("install", event => {
