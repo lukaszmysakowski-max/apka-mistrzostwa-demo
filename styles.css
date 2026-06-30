@@ -223,7 +223,8 @@ select, input, textarea {
   grid-template-areas:
     "label display"
     "message display"
-    "controls controls";
+    "controls controls"
+    "notice notice";
   gap: 5px 12px;
   align-items: center;
   min-width: 0;
@@ -261,6 +262,34 @@ select, input, textarea {
   min-height: 36px;
   padding: 7px 8px;
   font-size: 12px;
+}
+.timer-start-notice {
+  grid-area: notice;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #c77d00;
+  border-radius: 6px;
+  background: #fff0c7;
+  color: #603b00;
+  font-size: 12px;
+  font-weight: 900;
+}
+.timer-start-notice[hidden] {
+  display: none;
+}
+.info-icon {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #8a5600;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
 }
 .competition-timer.timer-warning {
   background: #b71414;
@@ -372,6 +401,7 @@ select, input, textarea {
   background: #ddd;
   border-color: #777;
   cursor: not-allowed;
+  pointer-events: none;
 }
 .row.field-invalid {
   background: #fff0ed;

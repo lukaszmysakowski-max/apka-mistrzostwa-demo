@@ -24,7 +24,8 @@ const ui = {
   selectedTeamId: null,
   selectedAssignmentKey: null,
   currentScoreSheetId: null,
-  invalidFieldIds: new Set()
+  invalidFieldIds: new Set(),
+  timerNoticeTimeoutId: null
 };
 
 async function init() {
@@ -68,7 +69,10 @@ function bindEvents() {
   $("#approveBtn").addEventListener("click", approveAssessment);
   $("#syncNowBtn").addEventListener("click", trySync);
   $("#retrySyncBtn").addEventListener("click", trySync);
-  $("#timerStartBtn").addEventListener("click", () => competitionTimerService.start());
+  $("#timerStartBtn").addEventListener("click", () => {
+    hideTimerStartNotice();
+    competitionTimerService.start();
+  });
   $("#timerPauseBtn").addEventListener("click", () => competitionTimerService.pause());
   $("#timerResumeBtn").addEventListener("click", () => competitionTimerService.resume());
   $("#timerResetBtn").addEventListener("click", () => competitionTimerService.reset());
@@ -87,6 +91,27 @@ function bindEvents() {
       await updateField(event.target.dataset.fieldId, event.target.value);
     }
   });
+
+  document.addEventListener("click", event => {
+    const choice = event.target.closest?.(".choice");
+    if (!choice || competitionTimerService.getSnapshot().startedAt) return;
+    event.preventDefault();
+    showTimerStartNotice();
+  });
+}
+
+function showTimerStartNotice() {
+  const notice = $("#timerStartNotice");
+  notice.hidden = false;
+  window.clearTimeout(ui.timerNoticeTimeoutId);
+  ui.timerNoticeTimeoutId = window.setTimeout(hideTimerStartNotice, 3000);
+}
+
+function hideTimerStartNotice() {
+  const notice = $("#timerStartNotice");
+  if (notice) notice.hidden = true;
+  window.clearTimeout(ui.timerNoticeTimeoutId);
+  ui.timerNoticeTimeoutId = null;
 }
 
 async function renderAll() {
