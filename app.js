@@ -19,13 +19,18 @@ const competitionTimerService = new CompetitionTimerService();
 
 const ui = {
   state: null,
+  appMode: "judge",
+  judgeAssignment: null,
   selectedTeamId: null,
   selectedAssignmentKey: null,
-  currentScoreSheetId: null
+  currentScoreSheetId: null,
+  invalidFieldIds: new Set()
 };
 
 async function init() {
   const config = await new ConfigRepository().loadBootstrap();
+  ui.appMode = normalizeAppMode(config.appMode);
+  ui.judgeAssignment = config.judgeAssignment || null;
   ui.state = await repository.bootstrap(config);
   restoreUiState();
   bindEvents();
@@ -39,18 +44,15 @@ async function init() {
 
 function bindEvents() {
   document.querySelectorAll(".tab").forEach(button => {
-    button.addEventListener("click", () => showView(button.dataset.view));
+    button.addEventListener("click", () => navigateToView(button.dataset.view));
   });
 
   document.querySelectorAll("[data-view-target]").forEach(button => {
-    button.addEventListener("click", () => showView(button.dataset.viewTarget));
+    button.addEventListener("click", () => navigateToView(button.dataset.viewTarget));
   });
 
   $("#startAssessmentBtn").addEventListener("click", startAssessment);
-  $("#finishAssessmentBtn").addEventListener("click", () => {
-    renderFinishScreen();
-    showView("finish-screen");
-  });
+  $("#finishAssessmentBtn").addEventListener("click", finishAssessment);
   $("#approveBtn").addEventListener("click", approveAssessment);
   $("#syncNowBtn").addEventListener("click", trySync);
   $("#retrySyncBtn").addEventListener("click", trySync);
@@ -78,6 +80,7 @@ function bindEvents() {
 async function renderAll() {
   ui.state = await repository.getState();
   $("#deviceLabel").textContent = ui.state.device?.label || "Tablet";
+  applyAppMode();
   renderTeamList();
   renderSyncStatus();
   await renderRanking();
@@ -86,10 +89,46 @@ async function renderAll() {
 }
 
 function showView(id) {
+  if (!canShowView(id)) id = "team-screen";
   document.querySelectorAll(".view, .tab").forEach(el => el.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
   document.querySelector(`[data-view="${id}"]`)?.classList.add("active");
   window.scrollTo(0, 0);
+}
+
+async function navigateToView(id) {
+  const leavingActiveCard = document.getElementById("card-screen")?.classList.contains("active")
+    && id !== "card-screen"
+    && id !== "finish-screen"
+    && ui.currentScoreSheetId;
+  if (leavingActiveCard && !(await validateActiveCardBeforeClose())) return;
+  showView(id);
+}
+
+function applyAppMode() {
+  document.body.dataset.appMode = ui.appMode;
+  const adminOnlyViews = ["ranking-screen", "audit-screen", "sync-screen", "sync-error-screen"];
+  for (const viewId of adminOnlyViews) {
+    const view = document.getElementById(viewId);
+    if (view) view.hidden = ui.appMode !== "admin";
+  }
+  document.querySelectorAll("[data-view]").forEach(button => {
+    const viewId = button.dataset.view;
+    const adminOnly = adminOnlyViews.includes(viewId);
+    button.hidden = ui.appMode !== "admin" && adminOnly;
+  });
+  const nav = document.querySelector(".topbar nav");
+  if (nav) nav.hidden = ui.appMode !== "admin";
+  const syncPill = $("#syncPill");
+  if (syncPill) syncPill.hidden = ui.appMode !== "admin";
+  if (ui.appMode !== "admin" && adminOnlyViews.includes(document.querySelector(".view.active")?.id)) {
+    showView("team-screen");
+  }
+}
+
+function canShowView(id) {
+  if (ui.appMode === "admin") return true;
+  return !["ranking-screen", "audit-screen", "sync-screen", "sync-error-screen"].includes(id);
 }
 
 function renderTeamList() {
@@ -103,23 +142,35 @@ function renderTeamList() {
     return;
   }
 
-  $("#teamList").innerHTML = teams.map(team => `
-    <button class="team-button" data-team-id="${team.id}">
-      <span>${escapeHtml(team.number)}</span>
-      <strong>${escapeHtml(team.name)}</strong>
-    </button>
-  `).join("");
+  const activeTeamId = teams.some(team => team.id === ui.selectedTeamId) ? ui.selectedTeamId : teams[0].id;
+  ui.selectedTeamId = activeTeamId;
+  saveUiState();
 
-  document.querySelectorAll("[data-team-id]").forEach(button => {
-    button.addEventListener("click", () => selectTeam(button.dataset.teamId));
+  $("#teamList").innerHTML = `
+    <label class="team-select-panel">
+      Zespół
+      <select id="teamSelect">
+        ${teams.map(team => `<option value="${team.id}" ${team.id === activeTeamId ? "selected" : ""}>${escapeHtml(formatTeamName(team))}</option>`).join("")}
+      </select>
+    </label>
+    <div class="action-row">
+      <button id="selectTeamBtn">Dalej</button>
+    </div>
+  `;
+
+  $("#teamSelect").addEventListener("change", event => {
+    ui.selectedTeamId = event.target.value;
+    saveUiState();
   });
+  $("#selectTeamBtn").addEventListener("click", () => selectTeam($("#teamSelect").value));
 }
 
 function selectTeam(teamId) {
   ui.selectedTeamId = teamId;
   saveUiState();
   const team = getSelectedTeam();
-  $("#startTeamNumber").textContent = team?.number || "--";
+  $("#startTeamNumber").textContent = team?.number || "";
+  $("#startTeamNumber").hidden = !team?.number;
   $("#startTeamName").textContent = team?.name || "Zespół";
   renderAssignments();
   showView("start-screen");
@@ -131,26 +182,50 @@ function renderAssignments() {
     for (const part of competition.parts || []) {
       const template = ui.state.cardTemplates.find(item => item.id === part.cardTemplateId && !item.deletedAt);
       if (!template) continue;
+      if (!isVisibleForJudge(competition, part, template)) continue;
+      const locked = isAssignmentFilled({
+        teamId: ui.selectedTeamId,
+        competitionId: competition.id,
+        competitionPartId: part.id,
+        cardTemplateId: template.id
+      });
       options.push({
         key: `${competition.id}:${part.id}:${template.id}`,
-      label: `${competition.name} / ${part.name}`
+        label: `${competition.name} / ${part.name}`,
+        locked
       });
     }
   }
 
   $("#assignmentSelect").innerHTML = options.length
-    ? options.map(option => `<option value="${option.key}">${escapeHtml(option.label)}</option>`).join("")
+    ? options.map(option => `<option value="${option.key}" ${option.locked ? "disabled" : ""}>${escapeHtml(option.label)}${option.locked ? " - wypełniona" : ""}</option>`).join("")
     : `<option value="">Brak przypisanych kart</option>`;
-  ui.selectedAssignmentKey = options.some(option => option.key === ui.selectedAssignmentKey)
+  const availableOptions = options.filter(option => !option.locked);
+  ui.selectedAssignmentKey = availableOptions.some(option => option.key === ui.selectedAssignmentKey)
     ? ui.selectedAssignmentKey
-    : options[0]?.key || null;
+    : availableOptions[0]?.key || null;
   if (ui.selectedAssignmentKey) $("#assignmentSelect").value = ui.selectedAssignmentKey;
+  $("#assignmentSelect").disabled = ui.appMode === "judge" && options.length <= 1;
   $("#startAssessmentBtn").disabled = !ui.selectedTeamId || !ui.selectedAssignmentKey;
+  const existingMessage = document.querySelector("#assignmentLockMessage");
+  existingMessage?.remove();
+  if (options.length && !availableOptions.length) {
+    $("#assignmentSelect").insertAdjacentHTML("afterend", `<div id="assignmentLockMessage" class="validation-error">Ten zespół ma już wypełnione wszystkie dostępne karty.</div>`);
+  }
 }
 
 async function startAssessment() {
   const assignment = getSelectedAssignment();
   if (!assignment) return;
+  if (isAssignmentFilled({
+    teamId: ui.selectedTeamId,
+    competitionId: assignment.competition.id,
+    competitionPartId: assignment.part.id,
+    cardTemplateId: assignment.template.id
+  })) {
+    renderAssignments();
+    return;
+  }
 
   const scoreSheet = await scoringService.createDraft({
     teamId: ui.selectedTeamId,
@@ -162,6 +237,7 @@ async function startAssessment() {
   });
 
   ui.currentScoreSheetId = scoreSheet.id;
+  ui.invalidFieldIds.clear();
   configureTimerForAssignment(assignment);
   competitionTimerService.reset();
   saveUiState();
@@ -177,11 +253,14 @@ async function renderCard() {
   if (!scoreSheet || !assignment || !team) return;
 
   const score = calculateScore(assignment.template, scoreSheet.values);
+  const taskInfo = getTaskInfo(assignment);
   $("#cardTitle").textContent = assignment.template.name;
-  $("#teamNumber").value = `${team.number} - ${team.name}`;
-  $("#cardTeamNumber").textContent = team.number;
+  $("#teamNumber").value = formatTeamName(team);
+  $("#cardTaskLabel").textContent = taskInfo.label;
+  $("#cardTaskName").textContent = taskInfo.name;
   $("#totalScore").textContent = score.total;
   $("#maxScore").textContent = assignment.template.maxPoints;
+  renderCardValidationMessage();
 
   $("#columnsHead").innerHTML = (assignment.template.layout.columns || []).map(column => `<b>${escapeHtml(column.label)}</b>`).join("");
   $("#sections").innerHTML = assignment.template.sections.map(section => renderSection(section, scoreSheet)).join("");
@@ -211,17 +290,20 @@ function renderSection(section, scoreSheet) {
 function renderItem(item, scoreSheet) {
   const value = scoreSheet.values[item.id];
   const capturedTime = scoreSheet.timeCaptures?.[item.id];
+  const timerStarted = Boolean(competitionTimerService.getSnapshot().startedAt);
+  const isInvalid = ui.invalidFieldIds.has(item.id);
+  const disabled = !timerStarted ? "disabled" : "";
   return `
-    <div class="row">
+    <div class="row${isInvalid ? " field-invalid" : ""}${!timerStarted ? " scoring-locked" : ""}" data-score-field="${item.id}">
       <div class="criterion">
         <span>${escapeHtml(item.label)}${item.required ? '<span class="required">*</span>' : ""}</span>
         ${capturedTime ? `<small class="captured-time">${escapeHtml(capturedTime.elapsedDisplay)} od startu / ${escapeHtml(capturedTime.systemTimeDisplay)}</small>` : ""}
       </div>
       <label class="choice" aria-label="${escapeHtml(item.label)} tak">
-        <input type="radio" name="${item.id}" value="yes" data-field-id="${item.id}" ${value === "yes" ? "checked" : ""}>
+        <input type="radio" name="${item.id}" value="yes" data-field-id="${item.id}" ${value === "yes" ? "checked" : ""} ${disabled}>
       </label>
       <label class="choice" aria-label="${escapeHtml(item.label)} nie">
-        <input type="radio" name="${item.id}" value="no" data-field-id="${item.id}" ${value === "no" ? "checked" : ""}>
+        <input type="radio" name="${item.id}" value="no" data-field-id="${item.id}" ${value === "no" ? "checked" : ""} ${disabled}>
       </label>
       <div class="points">${item.captureTime?.scoreTiming === "deferredRanking" ? (value === "yes" ? "*" : 0) : (value === "yes" ? Number(item.points || 0) : 0)}</div>
     </div>`;
@@ -229,7 +311,7 @@ function renderItem(item, scoreSheet) {
 
 async function updateField(fieldId, value) {
   const scoreSheet = await getCurrentScoreSheet();
-  if (!scoreSheet || scoreSheet.approvedAt) return;
+  if (!scoreSheet || scoreSheet.approvedAt || !competitionTimerService.getSnapshot().startedAt) return;
   const assignment = getAssignmentForScoreSheet(scoreSheet);
   const field = findCardItem(assignment?.template, fieldId);
   const existingCapture = scoreSheet.timeCaptures?.[fieldId];
@@ -258,9 +340,41 @@ async function updateField(fieldId, value) {
     deviceId: getDeviceId(),
     userId: getUserId()
   });
+  ui.invalidFieldIds.delete(fieldId);
   await renderCard();
   await renderAudit();
   await renderSyncQueue();
+}
+
+async function finishAssessment() {
+  if (!(await validateActiveCardBeforeClose())) return;
+
+  const scoreSheet = await getCurrentScoreSheet();
+  const assignment = getAssignmentForScoreSheet(scoreSheet);
+  if (!scoreSheet || !assignment) return;
+
+  await renderFinishScreen();
+  showView("finish-screen");
+}
+
+async function validateActiveCardBeforeClose() {
+  const scoreSheet = await getCurrentScoreSheet();
+  const assignment = getAssignmentForScoreSheet(scoreSheet);
+  if (!scoreSheet || !assignment) return true;
+
+  const validation = validateCard(assignment.template, scoreSheet.values);
+  const missingFieldIds = validation.filter(error => error.fieldId).map(error => error.fieldId);
+  ui.invalidFieldIds = new Set(missingFieldIds);
+
+  if (missingFieldIds.length) {
+    await renderCard();
+    focusFirstInvalidField(missingFieldIds[0]);
+    return false;
+  }
+
+  ui.invalidFieldIds.clear();
+  renderCardValidationMessage();
+  return true;
 }
 
 async function renderFinishScreen() {
@@ -271,7 +385,8 @@ async function renderFinishScreen() {
 
   const score = calculateScore(assignment.template, scoreSheet.values);
   const validation = validateCard(assignment.template, scoreSheet.values);
-  $("#finishTeamNumber").textContent = team.number;
+  $("#finishTeamNumber").textContent = team.number || "";
+  $("#finishTeamNumber").hidden = !team.number;
   $("#finishSummary").textContent = `Suma punktów: ${score.total} / ${assignment.template.maxPoints}`;
   $("#validationBox").innerHTML = validation.length
     ? validation.map(error => `<div class="validation-error">${escapeHtml(error.message)}</div>`).join("")
@@ -292,12 +407,15 @@ async function approveAssessment() {
   });
 
   if (!result.ok) {
-    await renderFinishScreen();
+    ui.invalidFieldIds = new Set(result.validationErrors.filter(error => error.fieldId).map(error => error.fieldId));
+    showView("card-screen");
+    await renderCard();
+    focusFirstInvalidField(result.validationErrors.find(error => error.fieldId)?.fieldId);
     return;
   }
 
   const team = getSelectedTeam();
-  $("#confirmTeam").textContent = team ? `${team.number} - ${team.name}` : "--";
+  $("#confirmTeam").textContent = team ? formatTeamName(team) : "--";
   $("#confirmScore").textContent = `${result.scoreSheet.finalScore} / ${assignment.template.maxPoints}`;
   $("#confirmStatus").textContent = SyncStatus.QUEUED;
   ui.currentScoreSheetId = null;
@@ -320,7 +438,7 @@ async function renderRanking() {
   const rows = await rankingService.getGeneralRanking();
   $("#rankingBody").innerHTML = rows.length
     ? rows.map((row, index) => `
-      <tr><td>${index + 1}</td><td>${escapeHtml(row.teamNumber)} - ${escapeHtml(row.teamName)}</td><td>${row.completedCompetitions}</td><td><b>${row.total}</b></td></tr>
+      <tr><td>${index + 1}</td><td>${escapeHtml(formatRankingTeamName(row))}</td><td>${row.completedCompetitions}</td><td><b>${row.total}</b></td></tr>
     `).join("")
     : `<tr><td colspan="4">Brak zatwierdzonych wyników.</td></tr>`;
 }
@@ -380,6 +498,28 @@ function renderTimer(timer) {
   $("#timerResumeBtn").disabled = timer.running || timer.isFinished || timer.remainingSeconds === timer.durationSeconds;
   $("#timerResetBtn").textContent = timer.resetLabel;
   $("#timerSoundBtn").textContent = timer.soundEnabled ? "Dźwięk: włączony" : "Dźwięk: wyłączony";
+  const scoringLocked = !timer.startedAt;
+  document.querySelectorAll("#scoreCard input[data-field-id]").forEach(input => {
+    input.disabled = scoringLocked;
+    input.closest(".row")?.classList.toggle("scoring-locked", scoringLocked);
+  });
+}
+
+function renderCardValidationMessage() {
+  const message = $("#cardValidationMessage");
+  if (!message) return;
+  message.hidden = ui.invalidFieldIds.size === 0;
+}
+
+function focusFirstInvalidField(fieldId) {
+  if (!fieldId) return;
+  const firstInvalidInput = document.querySelector(`[data-score-field="${cssEscape(fieldId)}"] input`);
+  firstInvalidInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+  firstInvalidInput?.focus({ preventScroll: true });
+}
+
+function cssEscape(value) {
+  return window.CSS?.escape ? window.CSS.escape(value) : String(value).replace(/["\\]/g, "\\$&");
 }
 
 function configureTimerForAssignment(assignment) {
@@ -451,6 +591,54 @@ function getDeviceId() {
 
 function getUserId() {
   return ui.state.currentUser?.id || null;
+}
+
+function isAssignmentFilled({ teamId, competitionId, competitionPartId, cardTemplateId }) {
+  return (ui.state.scoreSheets || []).some(scoreSheet => {
+    if (scoreSheet.deletedAt) return false;
+    if (scoreSheet.teamId !== teamId) return false;
+    if (scoreSheet.competitionId !== competitionId) return false;
+    if (scoreSheet.competitionPartId !== competitionPartId) return false;
+    if (scoreSheet.cardTemplateId !== cardTemplateId) return false;
+    return Boolean(
+      scoreSheet.approvedAt ||
+      scoreSheet.finalScore != null ||
+      Object.keys(scoreSheet.values || {}).length ||
+      Object.keys(scoreSheet.timeCaptures || {}).length
+    );
+  });
+}
+
+function isVisibleForJudge(competition, part, template) {
+  if (ui.appMode === "admin") return true;
+  const assigned = ui.judgeAssignment;
+  if (!assigned) return true;
+  return (!assigned.competitionId || assigned.competitionId === competition.id)
+    && (!assigned.competitionPartId || assigned.competitionPartId === part.id)
+    && (!assigned.cardTemplateId || assigned.cardTemplateId === template.id);
+}
+
+function getTaskInfo(assignment) {
+  const assigned = ui.appMode === "judge" ? ui.judgeAssignment : null;
+  const number = assigned?.taskNumber || assignment?.part?.code || assignment?.competition?.code || "";
+  const name = assigned?.taskName || assignment?.competition?.name || assignment?.template?.name || "--";
+  return {
+    label: number ? `Zadanie ${number}` : "Zadanie",
+    name
+  };
+}
+
+function formatTeamName(team) {
+  if (!team) return "--";
+  return team.number ? `${team.number} - ${team.name}` : team.name;
+}
+
+function formatRankingTeamName(row) {
+  return row.teamNumber ? `${row.teamNumber} - ${row.teamName}` : row.teamName;
+}
+
+function normalizeAppMode(value) {
+  return value === "admin" ? "admin" : "judge";
 }
 
 function restoreUiState() {

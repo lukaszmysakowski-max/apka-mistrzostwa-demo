@@ -24,9 +24,15 @@ W aktualnym demo ekran karty zawiera mały licznik czasu konkurencji w lewym gó
 
 ## Dostępne szablony kart demo
 
-Aktualnie w demo pozostawiono tylko jedna karte oceny:
+Aktualnie w demo dostępne są następujące karty oceny:
 
 - `card-template-zwirownia-2026.json`.
+- `card-template-blair-a-2026.json`.
+- `card-template-blair-d-2026.json`.
+- `card-template-szybcy-a-2026.json`.
+- `card-template-szybcy-b-2026.json`.
+- `card-template-kill-bill-2026.json`.
+- `card-template-trainspotting-2026.json`.
 
 Po wybraniu zespołu lista `Konkurencja / karta` pokazuje kartę przypisaną w `data/demo-data.json`. Wybór karty nie wymaga zmian w `app.js`.
 
@@ -60,3 +66,33 @@ Tryb demo jest włączony jednym parametrem w `data/app-config.json`:
 ```
 
 Zmiana `enabled` na `false` wyłącza ładowanie przykładowych zespołów, ról, konkurencji, wyników, audytu i kolejki synchronizacji. Dane produkcyjne nadal powinny przyjść z API albo z docelowych plików konfiguracyjnych w `data`. Lokalny zapis jest traktowany jako cache offline i kolejka operacji do synchronizacji.
+
+## Tryb aplikacji
+
+Domyślny widok aplikacji to tryb sędziego:
+
+```json
+"appMode": "judge"
+```
+
+W trybie `judge` widoczne są tylko: wybór zespołu, wybór konkurencji, karta oceny, licznik czasu, suma punktów i zakończenie oceny. Ranking, audyt i synchronizacja są ukryte.
+
+Przypisana karta sędziego jest ustawiona w `data/app-config.json`:
+
+```json
+"judgeAssignment": {
+  "competitionId": "competition-kill-bill",
+  "competitionPartId": "competition-part-kill-bill-main",
+  "cardTemplateId": "card-template-kill-bill-2026",
+  "taskNumber": "1",
+  "taskName": "Kill Bill"
+}
+```
+
+W trybie sędziego lista konkurencji pokazuje tylko tę jedną kartę. W późniejszym etapie to samo przypisanie będzie nadawane przez panel administratora.
+
+Żeby tymczasowo zobaczyć widoki administracyjne bez logowania, zmień w `data/app-config.json`:
+
+```json
+"appMode": "admin"
+```

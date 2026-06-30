@@ -11,8 +11,7 @@
     section { background: #f4f1ea; border: 2px solid #9f978a; border-radius: 8px; padding: 18px; }
     h1, h2 { margin: 0 0 12px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
-    .team { background: #fff; border: 2px solid #111; border-radius: 6px; padding: 14px; display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: center; }
-    .team span { font-size: 44px; font-weight: 900; text-align: center; }
+    .team { background: #fff; border: 2px solid #111; border-radius: 6px; padding: 14px; font-weight: 900; }
     table { width: 100%; border-collapse: collapse; background: #fff; }
     th, td { border: 1px solid #b8b0a4; padding: 10px; text-align: left; }
     th { background: #e7dfd2; }
@@ -33,10 +32,10 @@
     <section>
       <h2>Przykładowe zespoły</h2>
       <div class="grid">
-        <div class="team"><span>01</span><strong>Kraków</strong></div>
-        <div class="team"><span>02</span><strong>Gdańsk</strong></div>
-        <div class="team"><span>03</span><strong>Poznań</strong></div>
-        <div class="team"><span>04</span><strong>Wrocław</strong></div>
+        <div class="team">Poszukiwawcze Ochotnicze Pogotowie Ratunkowe</div>
+        <div class="team">MDP OSP Ruptawa</div>
+        <div class="team">Gdański Uniwersytet Medyczny</div>
+        <div class="team">OSP Janowice</div>
       </div>
     </section>
     <section>
@@ -44,14 +43,14 @@
       <table>
         <thead><tr><th>Miejsce</th><th>Zespół</th><th>Konkurencje</th><th>Suma</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>01 - Kraków</td><td>Żwirownia</td><td><strong>150</strong></td></tr>
-          <tr><td>2</td><td>02 - Gdańsk</td><td>Żwirownia</td><td><strong>132</strong></td></tr>
+          <tr><td>1</td><td>Poszukiwawcze Ochotnicze Pogotowie Ratunkowe</td><td>Żwirownia</td><td><strong>150</strong></td></tr>
+          <tr><td>2</td><td>MDP OSP Ruptawa</td><td>Żwirownia</td><td><strong>132</strong></td></tr>
         </tbody>
       </table>
     </section>
     <section>
       <h2>Dostępne karty ocen</h2>
-      <p>Aktualne demo zawiera jedną kartę oceny: <strong>Żwirownia</strong>.</p>
+      <p>Aktualne demo zawiera karty: <strong>Żwirownia</strong>, <strong>Blair Witch Projeckt</strong>, <strong>Szybcy i wściekli</strong>, <strong>Kill Bill</strong> oraz <strong>Trainspotting</strong>.</p>
       <p>Pełne demo pokazuje kartę po wskazaniu zespołu.</p>
     </section>
     <section>

@@ -45,7 +45,9 @@ export function validateCard(cardTemplate, values) {
     if (!isVisible(section, values)) continue;
     for (const item of section.items) {
       if (!isVisible(item, values)) continue;
-      const required = item.required || (item.validationRules || []).some(rule => rule.type === "required");
+      const required = item.required
+        || (cardTemplate.requireAllPointFields && item.type === "yes_no")
+        || (item.validationRules || []).some(rule => rule.type === "required");
       if (required && (values[item.id] == null || values[item.id] === "")) {
         errors.push({ fieldId: item.id, message: item.validationRules?.find(rule => rule.type === "required")?.message || "Pole wymagane." });
       }

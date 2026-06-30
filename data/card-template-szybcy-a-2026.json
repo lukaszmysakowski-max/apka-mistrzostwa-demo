@@ -1,0 +1,271 @@
+{
+  "id": "card-template-szybcy-a-2026",
+  "schemaVersion": 2,
+  "competitionId": "competition-szybcy",
+  "competitionPartId": "competition-part-szybcy-a",
+  "name": "KONKURENCJA 2 \"SZYBCY I WŚCIEKLI\" A",
+  "version": 1,
+  "status": "published",
+  "maxPoints": 145,
+  "scoringMode": "yes_no_points",
+  "deletedAt": null,
+  "deletedBy": null,
+  "layout": {
+    "mode": "paper_like",
+    "paper": "A4-landscape-scaled",
+    "columns": [
+      {
+        "id": "criterion",
+        "label": "",
+        "width": "auto"
+      },
+      {
+        "id": "yes",
+        "label": "tak",
+        "width": 72
+      },
+      {
+        "id": "no",
+        "label": "nie",
+        "width": 72
+      },
+      {
+        "id": "points",
+        "label": "pkt",
+        "width": 64
+      }
+    ],
+    "notes": []
+  },
+  "sections": [
+    {
+      "id": "bezpieczenstwo",
+      "title": "BEZPIECZEŃSTWO",
+      "group": "bezpieczenstwo",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "miejsce_bezpieczne",
+          "label": "Miejsce bezpieczne",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "ocena_wstepna",
+      "title": "OCENA WSTĘPNA - W POJEŹDZIE",
+      "group": "ocena_wstepna",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "acvpu_u",
+          "label": "OCENA STANU ŚWIADOMOŚCI ACVPU - U",
+          "type": "yes_no",
+          "points": 0,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "a_drozne",
+          "label": "A - drożność d.o. drożne",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "b_oddech_zero",
+          "label": "B - ocena oddechu 0/min",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "c_krwotok_udo",
+          "label": "C - masywny krwotok z uda",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "c_tetno_nitkowate",
+          "label": "C - tętno na tętnicy promieniowej nitkowate",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "badanie",
+      "title": "BADANIE PODMIOTOWE I PRZEDMIOTOWE",
+      "group": "badanie",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "szybka_ewakuacja",
+          "label": "Szybka ewakuacja",
+          "type": "yes_no",
+          "points": 20,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "interwencje",
+      "title": "KLUCZOWE INTERWENCJE",
+      "group": "interwencje",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "tlenoterapia",
+          "label": "Tlenoterapia",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "stabilizacja_klatki",
+          "label": "Stabilizacja wiotkiej klatki piersiowej",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "zabezpieczenie_krwotoku",
+          "label": "Zabezpieczenie krwotoku z uda",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "ponowne_abc",
+          "label": "Ponowne ABC: A drożny, B 5/10 s, C 20/10 s tętno promieniowe",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "wspomaganie_oddechu",
+          "label": "Wspomaganie oddechu",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "komunikacja",
+      "title": "KOMUNIKACJA",
+      "group": "komunikacja",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "swiadomosc_sytuacyjna",
+          "label": "Świadomość sytuacyjna zespołu",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "postawa_lidera",
+          "label": "Postawa lidera zespołu",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "przekazanie_zrm",
+          "label": "Przekazanie poszkodowanego dla ZRM",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    }
+  ],
+  "validationRules": [
+    {
+      "type": "maxScore",
+      "value": 145,
+      "message": "Suma punktów nie może przekroczyć maksimum karty."
+    }
+  ],
+  "visibilityConditions": [],
+  "rules": [
+    {
+      "id": "card_total",
+      "type": "sum_yes_points",
+      "target": "finalScore"
+    }
+  ],
+  "export": {
+    "pdf": true,
+    "includeAuditHistory": "optional"
+  }
+}

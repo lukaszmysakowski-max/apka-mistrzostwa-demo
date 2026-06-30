@@ -1,284 +1,674 @@
 {
-    "schemaVersion":  1,
-    "device":  {
-                   "deviceId":  "device-demo-tab-07",
-                   "label":  "DEMO TAB-07 / Żwirownia"
-               },
-    "currentUser":  {
-                        "id":  "user-demo-judge-1",
-                        "login":  "sedzia.demo",
-                        "displayName":  "Sędzia Demo",
-                        "deletedAt":  null,
-                        "deletedBy":  null
-                    },
-    "events":  [
-                   {
-                       "id":  "event-demo-2026",
-                       "name":  "Demo OMRM 2026",
-                       "startsAt":  "2026-06-02T08:00:00.000Z",
-                       "endsAt":  "2026-06-02T18:00:00.000Z",
-                       "deletedAt":  null,
-                       "deletedBy":  null
-                   }
-               ],
-    "teams":  [
-                  {
-                      "id":  "team-demo-01",
-                      "eventId":  "event-demo-2026",
-                      "number":  "01",
-                      "name":  "Kraków",
-                      "deletedAt":  null,
-                      "deletedBy":  null
-                  },
-                  {
-                      "id":  "team-demo-02",
-                      "eventId":  "event-demo-2026",
-                      "number":  "02",
-                      "name":  "Gdańsk",
-                      "deletedAt":  null,
-                      "deletedBy":  null
-                  },
-                  {
-                      "id":  "team-demo-03",
-                      "eventId":  "event-demo-2026",
-                      "number":  "03",
-                      "name":  "Poznań",
-                      "deletedAt":  null,
-                      "deletedBy":  null
-                  },
-                  {
-                      "id":  "team-demo-04",
-                      "eventId":  "event-demo-2026",
-                      "number":  "04",
-                      "name":  "Wrocław",
-                      "deletedAt":  null,
-                      "deletedBy":  null
-                  }
-              ],
-    "users":  [
-                  {
-                      "id":  "user-demo-admin",
-                      "login":  "admin.demo",
-                      "displayName":  "Administrator Demo",
-                      "deletedAt":  null,
-                      "deletedBy":  null
-                  },
-                  {
-                      "id":  "user-demo-judge-1",
-                      "login":  "sedzia.demo",
-                      "displayName":  "Sędzia Demo",
-                      "deletedAt":  null,
-                      "deletedBy":  null
-                  },
-                  {
-                      "id":  "user-demo-captain-01",
-                      "login":  "kapitan01.demo",
-                      "displayName":  "Kapitan 01",
-                      "deletedAt":  null,
-                      "deletedBy":  null
-                  }
-              ],
-    "roles":  [
-                  {
-                      "id":  "role-demo-admin",
-                      "name":  "Administrator",
-                      "deletedAt":  null,
-                      "deletedBy":  null
-                  },
-                  {
-                      "id":  "role-demo-judge",
-                      "name":  "Sędzia",
-                      "deletedAt":  null,
-                      "deletedBy":  null
-                  },
-                  {
-                      "id":  "role-demo-observer",
-                      "name":  "Obserwator",
-                      "deletedAt":  null,
-                      "deletedBy":  null
-                  }
-              ],
-    "permissions":  [
-                        {
-                            "id":  "permission-demo-scores-edit",
-                            "code":  "scores.edit",
-                            "name":  "Edycja wyników"
-                        },
-                        {
-                            "id":  "permission-demo-scores-unlock",
-                            "code":  "scores.unlock",
-                            "name":  "Odblokowanie zamkniętej karty"
-                        },
-                        {
-                            "id":  "permission-demo-ranking-view",
-                            "code":  "ranking.view",
-                            "name":  "Podgląd rankingu"
-                        },
-                        {
-                            "id":  "permission-demo-audit-view",
-                            "code":  "audit.view",
-                            "name":  "Podgląd audytu zmian"
-                        }
-                    ],
-    "competitions":  [
-                         {
-                             "id":  "competition-zwirownia",
-                             "eventId":  "event-demo-2026",
-                             "name":  "Żwirownia",
-                             "code":  "ZWIROWNIA",
-                             "rankingOrder":  1,
-                             "timer":  {
-                                           "durationSeconds":  600,
-                                           "warningThresholdSeconds":  120
-                                       },
-                             "parts":  [
-                                           {
-                                               "id":  "competition-part-zwirownia-main",
-                                               "name":  "Żwirownia",
-                                               "code":  "ZWIROWNIA",
-                                               "cardTemplateId":  "card-template-zwirownia-2026",
-                                               "weight":  1
-                                           }
-                                       ],
-                             "deletedAt":  null,
-                             "deletedBy":  null
-                         }
-                     ],
-    "cardTemplates":  [
-                          "card-template-zwirownia-2026.json"
-                      ],
-    "deviceAssignments":  [
-                              {
-                                  "id":  "assignment-demo-tab-07",
-                                  "deviceId":  "device-demo-tab-07",
-                                  "competitionId":  "competition-zwirownia",
-                                  "competitionPartId":  "competition-part-zwirownia-main",
-                                  "judgeUserId":  "user-demo-judge-1",
-                                  "deletedAt":  null,
-                                  "deletedBy":  null
-                              }
-                          ],
-    "scoreSheets":  [
-                        {
-                            "id":  "score-demo-01-zwirownia",
-                            "teamId":  "team-demo-01",
-                            "competitionId":  "competition-zwirownia",
-                            "competitionPartId":  "competition-part-zwirownia-main",
-                            "cardTemplateId":  "card-template-zwirownia-2026",
-                            "values":  {
-                                           "bezp_ocena":  "yes",
-                                           "a_droznosc":  "yes",
-                                           "b_oddech":  "yes",
-                                           "c_krwawienia":  "yes",
-                                           "c_tetno":  "yes",
-                                           "swiadomosc":  "yes",
-                                           "gdo_rurka":  "yes",
-                                           "gdo_alt":  "no",
-                                           "wentylacja":  "yes",
-                                           "ramie_opatrunek":  "yes",
-                                           "pachwina_packing":  "yes",
-                                           "udo_opaska":  "yes",
-                                           "tlenoterapia":  "yes",
-                                           "przekazanie":  "yes",
-                                           "lider":  "yes",
-                                           "sytuacja":  "yes",
-                                           "przygotowanie":  "yes",
-                                           "ewakuacja":  "yes"
-                                       },
-                            "comments":  {
-
-                                         },
-                            "status":  "approved",
-                            "entityVersion":  3,
-                            "finalScore":  150,
-                            "finalCardJson":  {
-                                                  "snapshotTemplateId":  "card-template-zwirownia-2026",
-                                                  "snapshotTemplateVersion":  1
-                                              },
-                            "approvedAt":  "2026-06-02T12:10:00.000Z",
-                            "approvedBy":  "user-demo-judge-1",
-                            "deletedAt":  null,
-                            "deletedBy":  null
-                        },
-                        {
-                            "id":  "score-demo-02-zwirownia",
-                            "teamId":  "team-demo-02",
-                            "competitionId":  "competition-zwirownia",
-                            "competitionPartId":  "competition-part-zwirownia-main",
-                            "cardTemplateId":  "card-template-zwirownia-2026",
-                            "values":  {
-
-                                       },
-                            "comments":  {
-
-                                         },
-                            "status":  "approved",
-                            "entityVersion":  2,
-                            "finalScore":  132,
-                            "finalCardJson":  {
-                                                  "snapshotTemplateId":  "card-template-zwirownia-2026",
-                                                  "snapshotTemplateVersion":  1
-                                              },
-                            "approvedAt":  "2026-06-02T12:30:00.000Z",
-                            "approvedBy":  "user-demo-judge-1",
-                            "deletedAt":  null,
-                            "deletedBy":  null
-                        }
-                    ],
-    "auditLog":  [
-                     {
-                         "id":  "audit-demo-1",
-                         "userId":  "user-demo-judge-1",
-                         "roleId":  "role-demo-judge",
-                         "deviceId":  "device-demo-tab-07",
-                         "occurredAt":  "2026-06-02T12:10:00.000Z",
-                         "action":  "score_sheet.approve",
-                         "entity":  "score_sheet",
-                         "entityId":  "score-demo-01-zwirownia",
-                         "fieldId":  null,
-                         "previousValue":  "draft",
-                         "newValue":  {
-                                          "status":  "approved",
-                                          "finalScore":  150
-                                      },
-                         "reason":  null,
-                         "entityVersion":  3
-                     }
-                 ],
-    "syncOperations":  [
-                           {
-                               "id":  "sync-demo-queued-1",
-                               "client_operation_id":  "client-operation-demo-queued-1",
-                               "device_id":  "device-demo-tab-07",
-                               "type":  "score_sheet.approve",
-                               "entity":  "score_sheet",
-                               "entity_id":  "score-demo-02-zwirownia",
-                               "entity_version":  2,
-                               "payload":  {
-                                               "scoreSheetId":  "score-demo-02-zwirownia"
-                                           },
-                               "status":  "queued",
-                               "retry_count":  0,
-                               "max_retries":  5,
-                               "next_retry_at":  "2026-06-02T14:00:00.000Z",
-                               "created_at":  "2026-06-02T12:30:00.000Z",
-                               "sent_at":  null,
-                               "conflict":  null,
-                               "error":  null
-                           }
-                       ],
-    "appeals":  [
-                    {
-                        "id":  "appeal-demo-1",
-                        "teamId":  "team-demo-02",
-                        "competitionId":  "competition-zwirownia",
-                        "submittedAt":  "2026-06-02T14:05:00.000Z",
-                        "status":  "submitted",
-                        "decision":  null,
-                        "decisionBy":  null,
-                        "justification":  "Przykladowy protest demonstracyjny.",
-                        "deletedAt":  null,
-                        "deletedBy":  null
-                    }
-                ]
+  "schemaVersion": 1,
+  "device": {
+    "deviceId": "device-demo-tab-07",
+    "label": "DEMO TAB-07 / Żwirownia"
+  },
+  "currentUser": {
+    "id": "user-demo-judge-1",
+    "login": "sedzia.demo",
+    "displayName": "Sędzia Demo",
+    "deletedAt": null,
+    "deletedBy": null
+  },
+  "events": [
+    {
+      "id": "event-demo-2026",
+      "name": "Demo OMRM 2026",
+      "startsAt": "2026-06-02T08:00:00.000Z",
+      "endsAt": "2026-06-02T18:00:00.000Z",
+      "deletedAt": null,
+      "deletedBy": null
+    }
+  ],
+  "teams": [
+    {
+      "id": "team-demo-01",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Poszukiwawcze Ochotnicze Pogotowie Ratunkowe",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-02",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "MDP OSP Ruptawa",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-03",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Gdański Uniwersytet Medyczny",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-04",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Gdański Uniwersytet Medyczny",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-05",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "OSP Janowice",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-06",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Ochotnicza Straż Pożarna w Bestwinie",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-07",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "GUMed oreo",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-08",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Gdański Uniwersytet Medyczny",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-09",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "GDAŃSKI UNIWERSYTET MEDYCZNY",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-10",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Podlskie Koty",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-11",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Drużyna wlasna",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-12",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "prywatny - nazwa drużyny \"Czwarte podejście\"",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-13",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "STRAŻ POŻARNA NADARZYN",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-14",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Ochotnicza Straż Pożarna w Barczewie II",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-15",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Państwowa Uczelnia Zawodowa im. prof. Edwarda F. Szczepanika w Suwałkach",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-16",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "OSP Barczewo",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-17",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Akademia Wojsk Ladowych",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-18",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Kghm SSWM",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-19",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "MOTO RESET LACHOWICE",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-20",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Prywatny",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-21",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Osp Jamielnik",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-22",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Akademia Pierwszej Pomocy Toruń",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-23",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Harcerska Grupa Ratownicza „Bemowo” (HGR Bemowo)",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-24",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "KP PSP Krotoszyn",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-25",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "KP PSP w Brzegu",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-26",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Reckitt Benckiser Production (Poland) Sp. z o.o.",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-27",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "SKN Ratownictwa Medycznego AMH Warszawa",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-28",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Ratownicy",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-29",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Sekcja Ratownictwa Medycznego Akademii Pożarniczej",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-30",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "X",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-31",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Wopr Olsztyn",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-32",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "OSP Łomianki",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-33",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Popendykle",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-34",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Centrum Ratownictwa",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-35",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "SKN medycyny ratunkowej i stanów nagłych",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-36",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Komenda Powiatowa Państwowej Straży Pożarnej w Pleszewie",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-37",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "Komenda Miejska Policji w Białymstoku",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-38",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "JRS s12",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-39",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "UWM Ratownictwo Medyczne",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "team-demo-40",
+      "eventId": "event-demo-2026",
+      "number": "",
+      "name": "KP PSP Brzeg",
+      "deletedAt": null,
+      "deletedBy": null
+    }
+  ],
+  "users": [
+    {
+      "id": "user-demo-admin",
+      "login": "admin.demo",
+      "displayName": "Administrator Demo",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "user-demo-judge-1",
+      "login": "sedzia.demo",
+      "displayName": "Sędzia Demo",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "user-demo-captain-01",
+      "login": "kapitan01.demo",
+      "displayName": "Kapitan 01",
+      "deletedAt": null,
+      "deletedBy": null
+    }
+  ],
+  "roles": [
+    {
+      "id": "role-demo-admin",
+      "name": "Administrator",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "role-demo-judge",
+      "name": "Sędzia",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "role-demo-observer",
+      "name": "Obserwator",
+      "deletedAt": null,
+      "deletedBy": null
+    }
+  ],
+  "permissions": [
+    {
+      "id": "permission-demo-scores-edit",
+      "code": "scores.edit",
+      "name": "Edycja wyników"
+    },
+    {
+      "id": "permission-demo-scores-unlock",
+      "code": "scores.unlock",
+      "name": "Odblokowanie zamkniętej karty"
+    },
+    {
+      "id": "permission-demo-ranking-view",
+      "code": "ranking.view",
+      "name": "Podgląd rankingu"
+    },
+    {
+      "id": "permission-demo-audit-view",
+      "code": "audit.view",
+      "name": "Podgląd audytu zmian"
+    }
+  ],
+  "competitions": [
+    {
+      "id": "competition-zwirownia",
+      "eventId": "event-demo-2026",
+      "name": "Żwirownia",
+      "code": "ZWIROWNIA",
+      "rankingOrder": 1,
+      "timer": {
+        "durationSeconds": 600,
+        "warningThresholdSeconds": 120
+      },
+      "parts": [
+        {
+          "id": "competition-part-zwirownia-main",
+          "name": "Żwirownia",
+          "code": "ZWIROWNIA",
+          "cardTemplateId": "card-template-zwirownia-2026",
+          "weight": 1
+        }
+      ],
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "competition-blair",
+      "eventId": "event-demo-2026",
+      "name": "Blair Witch Projeckt",
+      "code": "BLAIR_WITCH",
+      "rankingOrder": 2,
+      "timer": {
+        "durationSeconds": 600,
+        "warningThresholdSeconds": 120
+      },
+      "parts": [
+        {
+          "id": "competition-part-blair-a",
+          "name": "Poszkodowany A",
+          "code": "1A",
+          "cardTemplateId": "card-template-blair-a-2026",
+          "weight": 1
+        },
+        {
+          "id": "competition-part-blair-d",
+          "name": "Poszkodowana D",
+          "code": "1D",
+          "cardTemplateId": "card-template-blair-d-2026",
+          "weight": 1
+        }
+      ],
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "competition-szybcy",
+      "eventId": "event-demo-2026",
+      "name": "Szybcy i wściekli",
+      "code": "SZYBCY",
+      "rankingOrder": 3,
+      "timer": {
+        "durationSeconds": 600,
+        "warningThresholdSeconds": 120
+      },
+      "parts": [
+        {
+          "id": "competition-part-szybcy-a",
+          "name": "Karta A",
+          "code": "2A",
+          "cardTemplateId": "card-template-szybcy-a-2026",
+          "weight": 1
+        },
+        {
+          "id": "competition-part-szybcy-b",
+          "name": "Karta B",
+          "code": "2B",
+          "cardTemplateId": "card-template-szybcy-b-2026",
+          "weight": 1
+        }
+      ],
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "competition-kill-bill",
+      "eventId": "event-demo-2026",
+      "name": "Kill Bill",
+      "code": "KILL_BILL",
+      "rankingOrder": 6,
+      "timer": {
+        "durationSeconds": 600,
+        "warningThresholdSeconds": 120
+      },
+      "parts": [
+        {
+          "id": "competition-part-kill-bill-main",
+          "name": "Kill Bill",
+          "code": "6",
+          "cardTemplateId": "card-template-kill-bill-2026",
+          "weight": 1
+        }
+      ],
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "competition-trainspotting",
+      "eventId": "event-demo-2026",
+      "name": "Trainspotting",
+      "code": "TRAINSPOTTING",
+      "rankingOrder": 7,
+      "timer": {
+        "durationSeconds": 600,
+        "warningThresholdSeconds": 120
+      },
+      "parts": [
+        {
+          "id": "competition-part-trainspotting-main",
+          "name": "Trainspotting",
+          "code": "7",
+          "cardTemplateId": "card-template-trainspotting-2026",
+          "weight": 1
+        }
+      ],
+      "deletedAt": null,
+      "deletedBy": null
+    }
+  ],
+  "cardTemplates": [
+    "card-template-zwirownia-2026.json",
+    "card-template-blair-a-2026.json",
+    "card-template-blair-d-2026.json",
+    "card-template-szybcy-a-2026.json",
+    "card-template-szybcy-b-2026.json",
+    "card-template-kill-bill-2026.json",
+    "card-template-trainspotting-2026.json"
+  ],
+  "deviceAssignments": [
+    {
+      "id": "assignment-demo-tab-07",
+      "deviceId": "device-demo-tab-07",
+      "competitionId": "competition-zwirownia",
+      "competitionPartId": "competition-part-zwirownia-main",
+      "judgeUserId": "user-demo-judge-1",
+      "deletedAt": null,
+      "deletedBy": null
+    }
+  ],
+  "scoreSheets": [
+    {
+      "id": "score-demo-01-zwirownia",
+      "teamId": "team-demo-01",
+      "competitionId": "competition-zwirownia",
+      "competitionPartId": "competition-part-zwirownia-main",
+      "cardTemplateId": "card-template-zwirownia-2026",
+      "values": {
+        "bezp_ocena": "yes",
+        "a_droznosc": "yes",
+        "b_oddech": "yes",
+        "c_krwawienia": "yes",
+        "c_tetno": "yes",
+        "swiadomosc": "yes",
+        "gdo_rurka": "yes",
+        "gdo_alt": "no",
+        "wentylacja": "yes",
+        "ramie_opatrunek": "yes",
+        "pachwina_packing": "yes",
+        "udo_opaska": "yes",
+        "tlenoterapia": "yes",
+        "przekazanie": "yes",
+        "lider": "yes",
+        "sytuacja": "yes",
+        "przygotowanie": "yes",
+        "ewakuacja": "yes"
+      },
+      "comments": {},
+      "status": "approved",
+      "entityVersion": 3,
+      "finalScore": 150,
+      "finalCardJson": {
+        "snapshotTemplateId": "card-template-zwirownia-2026",
+        "snapshotTemplateVersion": 1
+      },
+      "approvedAt": "2026-06-02T12:10:00.000Z",
+      "approvedBy": "user-demo-judge-1",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "score-demo-02-zwirownia",
+      "teamId": "team-demo-02",
+      "competitionId": "competition-zwirownia",
+      "competitionPartId": "competition-part-zwirownia-main",
+      "cardTemplateId": "card-template-zwirownia-2026",
+      "values": {},
+      "comments": {},
+      "status": "approved",
+      "entityVersion": 2,
+      "finalScore": 132,
+      "finalCardJson": {
+        "snapshotTemplateId": "card-template-zwirownia-2026",
+        "snapshotTemplateVersion": 1
+      },
+      "approvedAt": "2026-06-02T12:30:00.000Z",
+      "approvedBy": "user-demo-judge-1",
+      "deletedAt": null,
+      "deletedBy": null
+    }
+  ],
+  "auditLog": [
+    {
+      "id": "audit-demo-1",
+      "userId": "user-demo-judge-1",
+      "roleId": "role-demo-judge",
+      "deviceId": "device-demo-tab-07",
+      "occurredAt": "2026-06-02T12:10:00.000Z",
+      "action": "score_sheet.approve",
+      "entity": "score_sheet",
+      "entityId": "score-demo-01-zwirownia",
+      "fieldId": null,
+      "previousValue": "draft",
+      "newValue": {
+        "status": "approved",
+        "finalScore": 150
+      },
+      "reason": null,
+      "entityVersion": 3
+    }
+  ],
+  "syncOperations": [
+    {
+      "id": "sync-demo-queued-1",
+      "client_operation_id": "client-operation-demo-queued-1",
+      "device_id": "device-demo-tab-07",
+      "type": "score_sheet.approve",
+      "entity": "score_sheet",
+      "entity_id": "score-demo-02-zwirownia",
+      "entity_version": 2,
+      "payload": {
+        "scoreSheetId": "score-demo-02-zwirownia"
+      },
+      "status": "queued",
+      "retry_count": 0,
+      "max_retries": 5,
+      "next_retry_at": "2026-06-02T14:00:00.000Z",
+      "created_at": "2026-06-02T12:30:00.000Z",
+      "sent_at": null,
+      "conflict": null,
+      "error": null
+    }
+  ],
+  "appeals": [
+    {
+      "id": "appeal-demo-1",
+      "teamId": "team-demo-02",
+      "competitionId": "competition-zwirownia",
+      "submittedAt": "2026-06-02T14:05:00.000Z",
+      "status": "submitted",
+      "decision": null,
+      "decisionBy": null,
+      "justification": "Przykladowy protest demonstracyjny.",
+      "deletedAt": null,
+      "deletedBy": null
+    }
+  ]
 }

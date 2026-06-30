@@ -1,0 +1,218 @@
+{
+  "id": "card-template-szybcy-b-2026",
+  "schemaVersion": 2,
+  "competitionId": "competition-szybcy",
+  "competitionPartId": "competition-part-szybcy-b",
+  "name": "KONKURENCJA 2 \"SZYBCY I WŚCIEKLI\" B",
+  "version": 1,
+  "status": "published",
+  "maxPoints": 105,
+  "scoringMode": "yes_no_points",
+  "deletedAt": null,
+  "deletedBy": null,
+  "layout": {
+    "mode": "paper_like",
+    "paper": "A4-landscape-scaled",
+    "columns": [
+      {
+        "id": "criterion",
+        "label": "",
+        "width": "auto"
+      },
+      {
+        "id": "yes",
+        "label": "tak",
+        "width": 72
+      },
+      {
+        "id": "no",
+        "label": "nie",
+        "width": 72
+      },
+      {
+        "id": "points",
+        "label": "pkt",
+        "width": 64
+      }
+    ],
+    "notes": []
+  },
+  "sections": [
+    {
+      "id": "bezpieczenstwo",
+      "title": "BEZPIECZEŃSTWO",
+      "group": "bezpieczenstwo",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "zabezpieczenie_miejsca",
+          "label": "Zabezpieczenie miejsca",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "ocena_wstepna",
+      "title": "OCENA WSTĘPNA",
+      "group": "ocena_wstepna",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "acvpu_p",
+          "label": "OCENA STANU ŚWIADOMOŚCI ACVPU - P",
+          "type": "yes_no",
+          "points": 0,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "a_zagrozone",
+          "label": "A - drożność d.o. zagrożone - krew w jamie ustnej",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "b_oddech_1",
+          "label": "B - ocena oddechu 1/10 s po odessaniu",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "c_krew_jama_ustna",
+          "label": "C - widoczna krew w jamie ustnej",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "c_tetno_25",
+          "label": "C - tętno 25/10 s",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "badanie",
+      "title": "BADANIE PODMIOTOWE I PRZEDMIOTOWE",
+      "group": "badanie",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "szybkie_badanie_urazowe",
+          "label": "Szybkie badanie urazowe",
+          "type": "yes_no",
+          "points": 10,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "interwencje",
+      "title": "KLUCZOWE INTERWENCJE",
+      "group": "interwencje",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "odessanie_wstepne",
+          "label": "Odessanie wstępne krwi z jamy ustnej",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "proba_wentylacji",
+          "label": "Próba wentylacji",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "odsysanie_drogi",
+          "label": "Odsysanie z dróg oddechowych",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "ulozenie_na_boku",
+          "label": "Ułożenie na boku przy odsysaniu",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    }
+  ],
+  "validationRules": [
+    {
+      "type": "maxScore",
+      "value": 105,
+      "message": "Suma punktów nie może przekroczyć maksimum karty."
+    }
+  ],
+  "visibilityConditions": [],
+  "rules": [
+    {
+      "id": "card_total",
+      "type": "sum_yes_points",
+      "target": "finalScore"
+    }
+  ],
+  "export": {
+    "pdf": true,
+    "includeAuditHistory": "optional"
+  }
+}

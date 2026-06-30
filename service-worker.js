@@ -1,4 +1,4 @@
-const CACHE = "omrm-mvp-client-v11";
+const CACHE = "omrm-mvp-client-v19";
 const ASSETS = [
   "./",
   "./index.html",
@@ -19,17 +19,25 @@ const ASSETS = [
   "./data/app-config.json",
   "./data/demo-data.json",
   "./data/card-template-zwirownia-2026.json",
+  "./data/card-template-blair-a-2026.json",
+  "./data/card-template-blair-d-2026.json",
+  "./data/card-template-szybcy-a-2026.json",
+  "./data/card-template-szybcy-b-2026.json",
+  "./data/card-template-kill-bill-2026.json",
+  "./data/card-template-trainspotting-2026.json",
   "./manifest.json",
   "./icon.svg"
 ];
 
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
 });
 

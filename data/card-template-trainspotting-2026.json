@@ -1,0 +1,337 @@
+{
+  "id": "card-template-trainspotting-2026",
+  "schemaVersion": 2,
+  "competitionId": "competition-trainspotting",
+  "competitionPartId": "competition-part-trainspotting-main",
+  "name": "KONKURENCJA 7 \"TRAINSPOTTING\"",
+  "version": 1,
+  "status": "published",
+  "maxPoints": 170,
+  "scoringMode": "yes_no_points",
+  "deletedAt": null,
+  "deletedBy": null,
+  "layout": {
+    "mode": "paper_like",
+    "paper": "A4-landscape-scaled",
+    "columns": [
+      {
+        "id": "criterion",
+        "label": "",
+        "width": "auto"
+      },
+      {
+        "id": "yes",
+        "label": "tak",
+        "width": 72
+      },
+      {
+        "id": "no",
+        "label": "nie",
+        "width": 72
+      },
+      {
+        "id": "points",
+        "label": "pkt",
+        "width": 64
+      }
+    ],
+    "notes": []
+  },
+  "sections": [
+    {
+      "id": "bezpieczenstwo",
+      "title": "BEZPIECZEŃSTWO",
+      "group": "bezpieczenstwo",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "miejsce_bezpieczne",
+          "label": "Miejsce bezpieczne",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "ocena_wstepna",
+      "title": "OCENA WSTĘPNA",
+      "group": "ocena_wstepna",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "acvpu_u",
+          "label": "Ocena stanu świadomości ACVPU - U",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "a_drozne",
+          "label": "A - drożne",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "b_oddech_6",
+          "label": "B - ocena oddechu 6/10 s, płytkie, świszczące",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "c_tetno_20",
+          "label": "C - tętno na tętnicy promieniowej 20/10 s",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "badanie",
+      "title": "BADANIE PODMIOTOWE I PRZEDMIOTOWE",
+      "group": "badanie",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "spo2_85",
+          "label": "Ocena SpO2 85%",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "s_duszenie",
+          "label": "S - nagle zaczął się dusić",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "a_nie_podaje",
+          "label": "A - nie podaje",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "m_nie_bierze",
+          "label": "M - nie bierze",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "p_zdrowy",
+          "label": "P - zdrowy",
+          "type": "yes_no",
+          "points": 0,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "l_sniadanie_alkohol",
+          "label": "L - śniadanie, jakiś alkohol",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "e_zapalil",
+          "label": "E - coś zapalił i zaczął się dusić",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "interwencje",
+      "title": "KLUCZOWE INTERWENCJE",
+      "group": "interwencje",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "rurka_ng",
+          "label": "Zabezpieczenie drożności GDO - rurka NG",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "tlenoterapia",
+          "label": "Tlenoterapia",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "abc_transport",
+          "label": "ABC podczas transportu",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "rozpoznanie_nzk",
+          "label": "Rozpoznanie NZK",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "rko_transport",
+          "label": "Podjęcie RKO podczas transportu",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "anafilaksja",
+          "label": "Identyfikacja anafilaksji",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "stopa_cukrzycowa",
+          "label": "Zabezpieczenie stopy cukrzycowej",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "komunikacja",
+      "title": "KOMUNIKACJA",
+      "group": "komunikacja",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "swiadomosc_sytuacyjna",
+          "label": "Świadomość sytuacyjna zespołu",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "przekazanie_zrm",
+          "label": "Przekazanie poszkodowanego dla ZRM",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    }
+  ],
+  "validationRules": [
+    {
+      "type": "maxScore",
+      "value": 170,
+      "message": "Suma punktów nie może przekroczyć maksimum karty."
+    }
+  ],
+  "visibilityConditions": [],
+  "rules": [
+    {
+      "id": "card_total",
+      "type": "sum_yes_points",
+      "target": "finalScore"
+    }
+  ],
+  "export": {
+    "pdf": true,
+    "includeAuditHistory": "optional"
+  }
+}

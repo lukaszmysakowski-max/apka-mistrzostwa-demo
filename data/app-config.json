@@ -4,6 +4,14 @@
     "enabled": true,
     "source": "demo-data.json"
   },
+  "appMode": "judge",
+  "judgeAssignment": {
+    "competitionId": "competition-kill-bill",
+    "competitionPartId": "competition-part-kill-bill-main",
+    "cardTemplateId": "card-template-kill-bill-2026",
+    "taskNumber": "1",
+    "taskName": "Kill Bill"
+  },
   "device": {
     "deviceId": "device-unassigned",
     "label": "Tablet nieprzypisany"
@@ -18,7 +26,7 @@
     {
       "id": "competition-zwirownia",
       "eventId": null,
-    "name": "Żwirownia",
+      "name": "Żwirownia",
       "code": "ZWIROWNIA",
       "rankingOrder": 1,
       "timer": {

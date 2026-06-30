@@ -1,0 +1,282 @@
+{
+  "id": "card-template-blair-a-2026",
+  "schemaVersion": 2,
+  "competitionId": "competition-blair",
+  "competitionPartId": "competition-part-blair-a",
+  "name": "KONKURENCJA 1 \"BLAIR WITCH PROJECKT\" - POSZKODOWANY A",
+  "version": 1,
+  "status": "published",
+  "maxPoints": 90,
+  "scoringMode": "yes_no_points",
+  "deletedAt": null,
+  "deletedBy": null,
+  "layout": {
+    "mode": "paper_like",
+    "paper": "A4-landscape-scaled",
+    "columns": [
+      {
+        "id": "criterion",
+        "label": "",
+        "width": "auto"
+      },
+      {
+        "id": "yes",
+        "label": "tak",
+        "width": 72
+      },
+      {
+        "id": "no",
+        "label": "nie",
+        "width": 72
+      },
+      {
+        "id": "points",
+        "label": "pkt",
+        "width": 64
+      }
+    ],
+    "notes": []
+  },
+  "sections": [
+    {
+      "id": "ocena_miejsca",
+      "title": "OCENA MIEJSCA ZDARZENIA",
+      "group": "ocena_miejsca",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "miejsce_zagrozenia_zewnatrz",
+          "label": "Ocena pod kątem zagrożeń na zewnątrz",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "badanie_wstepne",
+      "title": "BADANIE WSTĘPNE ABC - POSZKODOWANY A",
+      "group": "badanie_wstepne",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "acvpu_a",
+          "label": "D - ACVPU - A",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "oparzenie_i_stopnia",
+          "label": "C - oparzenie I stopnia",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "a_drozne",
+          "label": "A - drożne",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "b_oddech_24",
+          "label": "B - ocena oddechu 24/min, tlenoterapia",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "c_tetno_140",
+          "label": "C - tętno na tętnicach centralnych 140/min",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "c_crt",
+          "label": "C - CRT < 2 sek.",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "c_norma",
+          "label": "C - norma, norma",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "d_gcs_14",
+          "label": "D - GCS 14 pkt",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "badanie_urazowe",
+      "title": "BADANIE URAZOWE",
+      "group": "badanie_urazowe",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "szybkie_badanie_miejscowe",
+          "label": "Szybkie badanie urazowe prawidłowe - miejscowe",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "zabezpieczenie_oparzen",
+          "label": "Zabezpieczenie oparzeń",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "komfort_termiczny",
+          "label": "Komfort termiczny",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "interwencje",
+      "title": "KLUCZOWE INTERWENCJE",
+      "group": "interwencje",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "przekazanie_policji",
+          "label": "Przekazanie poszkodowanego policji",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "niegonienie_okultysty",
+          "label": "Niegonienie Okultysty II",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "komunikacja",
+      "title": "KOMUNIKACJA",
+      "group": "komunikacja",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "postawa_lidera",
+          "label": "Postawa lidera",
+          "type": "yes_no",
+          "points": 10,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "komunikacja_zespol",
+          "label": "Komunikacja w zespole - podział zespołu i przepływ informacji",
+          "type": "yes_no",
+          "points": 10,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    }
+  ],
+  "validationRules": [
+    {
+      "type": "maxScore",
+      "value": 90,
+      "message": "Suma punktów nie może przekroczyć maksimum karty."
+    }
+  ],
+  "visibilityConditions": [],
+  "rules": [
+    {
+      "id": "card_total",
+      "type": "sum_yes_points",
+      "target": "finalScore"
+    }
+  ],
+  "export": {
+    "pdf": true,
+    "includeAuditHistory": "optional"
+  }
+}

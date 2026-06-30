@@ -53,8 +53,8 @@
       <article class="paper-shell" aria-label="Karta ocen">
         <div class="paper-toolbar">
           <div class="team-chip">
-            <span>Zespół</span>
-            <strong id="cardTeamNumber">--</strong>
+            <span id="cardTaskLabel">Zadanie</span>
+            <strong id="cardTaskName">--</strong>
           </div>
           <section class="competition-timer" id="competitionTimer" aria-live="polite">
             <div class="timer-label">Czas konkurencji</div>
@@ -73,6 +73,9 @@
         </div>
 
         <form id="scoreCard" class="score-card">
+          <div id="cardValidationMessage" class="card-validation-message" role="alert" tabindex="-1" hidden>
+            Nie można zakończyć oceny. Uzupełnij wszystkie wymagane pola.
+          </div>
           <div class="paper-title">
             <h1 id="cardTitle">Karta ocen</h1>
             <label>Zespół nr <input id="teamNumber" readonly></label>

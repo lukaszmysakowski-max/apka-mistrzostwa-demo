@@ -104,9 +104,18 @@ h2 { margin: 0 0 10px; font-size: 24px; }
 
 .team-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 12px;
   margin-top: 18px;
+}
+.team-select-panel {
+  display: grid;
+  gap: 10px;
+  font-size: 18px;
+}
+.team-select-panel select {
+  min-height: 68px;
+  font-size: 22px;
+  font-weight: 900;
 }
 .team-button {
   min-height: 118px;
@@ -118,6 +127,9 @@ h2 { margin: 0 0 10px; font-size: 24px; }
   background: white;
   color: var(--ink);
   border-color: #161616;
+}
+.team-button-no-number {
+  grid-template-columns: 1fr;
 }
 .team-button span, .huge-number {
   font-weight: 900;
@@ -318,6 +330,12 @@ select, input, textarea {
   display: flex;
   align-items: center;
 }
+#sections > .section:first-child .row:first-child > .criterion,
+#sections > .section:first-child .row:first-child > .choice,
+#sections > .section:first-child .row:first-child > .points {
+  padding-top: 9px;
+  padding-bottom: 7px;
+}
 .criterion { border-left: 0; font-size: 15px; font-weight: 700; display: grid; gap: 3px; }
 .captured-time {
   color: #0c4b46;
@@ -327,6 +345,22 @@ select, input, textarea {
 .required { color: var(--accent-2); margin-left: 4px; }
 .choice { justify-content: center; }
 .points { justify-content: center; font-weight: 900; }
+.row.scoring-locked {
+  background: #eeeeec;
+  color: #777;
+}
+.row.scoring-locked .choice input {
+  background: #ddd;
+  border-color: #777;
+  cursor: not-allowed;
+}
+.row.field-invalid {
+  background: #fff0ed;
+  box-shadow: inset 0 0 0 3px var(--accent-2);
+}
+.row.field-invalid .choice input {
+  border-color: var(--accent-2);
+}
 .choice input {
   appearance: none;
   width: 38px;
@@ -355,6 +389,15 @@ select, input, textarea {
 }
 .paper-notes p { margin: 3px 0; }
 
+.card-validation-message {
+  margin-bottom: 12px;
+  border: 2px solid var(--accent-2);
+  border-radius: 6px;
+  background: #ffe1dc;
+  color: #7d160c;
+  padding: 12px;
+  font-weight: 900;
+}
 .validation-box { display: grid; gap: 8px; margin-top: 12px; }
 .validation-error, .validation-ok {
   border-radius: 6px;

@@ -1,0 +1,337 @@
+{
+  "id": "card-template-blair-d-2026",
+  "schemaVersion": 2,
+  "competitionId": "competition-blair",
+  "competitionPartId": "competition-part-blair-d",
+  "name": "KONKURENCJA 1 \"BLAIR WITCH PROJECKT\" - POSZKODOWANA D",
+  "version": 1,
+  "status": "published",
+  "maxPoints": 115,
+  "scoringMode": "yes_no_points",
+  "deletedAt": null,
+  "deletedBy": null,
+  "layout": {
+    "mode": "paper_like",
+    "paper": "A4-landscape-scaled",
+    "columns": [
+      {
+        "id": "criterion",
+        "label": "",
+        "width": "auto"
+      },
+      {
+        "id": "yes",
+        "label": "tak",
+        "width": 72
+      },
+      {
+        "id": "no",
+        "label": "nie",
+        "width": 72
+      },
+      {
+        "id": "points",
+        "label": "pkt",
+        "width": 64
+      }
+    ],
+    "notes": []
+  },
+  "sections": [
+    {
+      "id": "ocena_miejsca",
+      "title": "OCENA MIEJSCA ZDARZENIA",
+      "group": "ocena_miejsca",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "miejsce_zagrozenia_wewnatrz",
+          "label": "Ocena pod kątem zagrożeń w środku pomieszczenia",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "wezwanie_zrm",
+          "label": "Wezwanie ZRM",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "wezwanie_psp",
+          "label": "Wezwanie PSP",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "badanie_wstepne",
+      "title": "BADANIE WSTĘPNE ABC - POSZKODOWANA D",
+      "group": "badanie_wstepne",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "acvpu_u",
+          "label": "D - ACVPU - U",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "oparzenia_calego_ciala",
+          "label": "C - poparzenia III/II całego ciała",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "a_charczenie",
+          "label": "A - charczenie",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "b_oddech_6",
+          "label": "B - ocena oddechu 6/min, tlenoterapia",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "c_tetno_42",
+          "label": "C - tętno centralne 42/min, promieniowa niewyczuwalna",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "c_crt",
+          "label": "C - CRT < 2 sek.",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "c_skora",
+          "label": "C - skóra blada, sucha, ciepła",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "d_gcs_3",
+          "label": "D - GCS 3 pkt",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "badanie_urazowe",
+      "title": "BADANIE URAZOWE",
+      "group": "badanie_urazowe",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "szybkie_badanie_calosciowe",
+          "label": "Szybkie badanie urazowe prawidłowe - całościowe",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "oparzenia_glowy",
+          "label": "Zabezpieczenie oparzeń głowy",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "brzuch_ii_stopien",
+          "label": "Brzuch II stopień",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "konczyny_dolne",
+          "label": "Zabezpieczenie kończyn dolnych",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "ewakuacja_deska",
+          "label": "Ewakuacja na deskę lub inny sprzęt",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "komfort_termiczny",
+          "label": "Komfort termiczny",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "interwencje",
+      "title": "KLUCZOWE INTERWENCJE",
+      "group": "interwencje",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "unieruchomienie_nog",
+          "label": "Unieruchomienie zwęglonych nóg",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "przygotowanie_ewakuacji",
+          "label": "Przygotowanie do ewakuacji",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "komunikacja",
+      "title": "KOMUNIKACJA",
+      "group": "komunikacja",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "postawa_lidera",
+          "label": "Postawa lidera",
+          "type": "yes_no",
+          "points": 10,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "komunikacja_zespol",
+          "label": "Komunikacja w zespole - podział zespołu i przepływ informacji",
+          "type": "yes_no",
+          "points": 10,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    }
+  ],
+  "validationRules": [
+    {
+      "type": "maxScore",
+      "value": 115,
+      "message": "Suma punktów nie może przekroczyć maksimum karty."
+    }
+  ],
+  "visibilityConditions": [],
+  "rules": [
+    {
+      "id": "card_total",
+      "type": "sum_yes_points",
+      "target": "finalScore"
+    }
+  ],
+  "export": {
+    "pdf": true,
+    "includeAuditHistory": "optional"
+  }
+}

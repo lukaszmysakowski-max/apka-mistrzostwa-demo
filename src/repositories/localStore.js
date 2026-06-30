@@ -69,6 +69,7 @@ function createBootstrapSignature(bootstrap) {
   return JSON.stringify({
     schemaVersion: bootstrap.schemaVersion || 1,
     demoMode: Boolean(bootstrap.demoMode?.enabled),
+    teams: (bootstrap.teams || []).map(item => `${item.id}:${item.name}:${item.number || ""}`),
     competitions: (bootstrap.competitions || []).map(item => item.id),
     cardTemplates: (bootstrap.cardTemplates || []).map(item => item.id)
   });

@@ -1,0 +1,347 @@
+{
+  "id": "card-template-kill-bill-2026",
+  "schemaVersion": 2,
+  "competitionId": "competition-kill-bill",
+  "competitionPartId": "competition-part-kill-bill-main",
+  "name": "KONKURENCJA 6 \"KILL BILL\"",
+  "version": 1,
+  "status": "published",
+  "maxPoints": 190,
+  "scoringMode": "yes_no_points",
+  "requireAllPointFields": true,
+  "deletedAt": null,
+  "deletedBy": null,
+  "layout": {
+    "mode": "paper_like",
+    "paper": "A4-landscape-scaled",
+    "columns": [
+      {
+        "id": "criterion",
+        "label": "",
+        "width": "auto"
+      },
+      {
+        "id": "yes",
+        "label": "tak",
+        "width": 72
+      },
+      {
+        "id": "no",
+        "label": "nie",
+        "width": 72
+      },
+      {
+        "id": "points",
+        "label": "pkt",
+        "width": 64
+      }
+    ],
+    "notes": []
+  },
+  "sections": [
+    {
+      "id": "bezpieczenstwo",
+      "title": "BEZPIECZEŃSTWO",
+      "group": "bezpieczenstwo",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "miejsce_bezpieczne",
+          "label": "Miejsce bezpieczne",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "ocena_wstepna",
+      "title": "OCENA WSTĘPNA",
+      "group": "ocena_wstepna",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "acvpu_c",
+          "label": "Ocena stanu świadomości ACVPU - C",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "wytrzewienie",
+          "label": "C - widoczne wytrzewienie, lekko krwawi",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "a_zagrozone",
+          "label": "A - zagrożone",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "b_oddech_3",
+          "label": "B - ocena oddechu 3/10 s",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "c_tetno_20",
+          "label": "C - tętno na tętnicy promieniowej 20/10 s",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "badanie",
+      "title": "BADANIE PODMIOTOWE I PRZEDMIOTOWE",
+      "group": "badanie",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "szybkie_badanie_urazowe",
+          "label": "Szybkie badanie urazowe",
+          "type": "yes_no",
+          "points": 0,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "interwencje_ojciec",
+      "title": "KLUCZOWE INTERWENCJE - OJCIEC",
+      "group": "interwencje_ojciec",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "zabezpieczenie_wytrzewienia",
+          "label": "Zabezpieczenie wytrzewienia",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "ochrona_termiczna",
+          "label": "Ochrona termiczna",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "pozycja_z_nogami",
+          "label": "Pozycja ze zgiętymi nogami",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "interwencje_noworodek",
+      "title": "KLUCZOWE INTERWENCJE - NOWORODEK",
+      "group": "interwencje_noworodek",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "acvpu_u_wiotkie",
+          "label": "ACVPU - U, wiotkie",
+          "type": "yes_no",
+          "points": 0,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "noworodek_a_drozne_1",
+          "label": "A - drożne",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "noworodek_b_nie_oddycha",
+          "label": "B - nie oddycha",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "piec_wdechow",
+          "label": "5 wstępnych wdechów",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "acvpu_a",
+          "label": "ACVPU - A",
+          "type": "yes_no",
+          "points": 0,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "noworodek_a_drozne_2",
+          "label": "A - drożne po interwencji",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "noworodek_b_6",
+          "label": "B - 6/10 s",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "noworodek_c_25",
+          "label": "C - 25/10 s",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "ogrzanie",
+          "label": "Ogrzanie",
+          "type": "yes_no",
+          "points": 15,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    },
+    {
+      "id": "komunikacja",
+      "title": "KOMUNIKACJA",
+      "group": "komunikacja",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        {
+          "id": "swiadomosc_sytuacyjna",
+          "label": "Świadomość sytuacyjna zespołu",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        },
+        {
+          "id": "przekazanie_zrm",
+          "label": "Przekazanie poszkodowanego dla ZRM",
+          "type": "yes_no",
+          "points": 5,
+          "required": false,
+          "commentAllowed": true,
+          "group": "assessment",
+          "visibilityConditions": [],
+          "validationRules": []
+        }
+      ]
+    }
+  ],
+  "validationRules": [
+    {
+      "type": "maxScore",
+      "value": 190,
+      "message": "Suma punktów nie może przekroczyć maksimum karty."
+    }
+  ],
+  "visibilityConditions": [],
+  "rules": [
+    {
+      "id": "card_total",
+      "type": "sum_yes_points",
+      "target": "finalScore"
+    }
+  ],
+  "export": {
+    "pdf": true,
+    "includeAuditHistory": "optional"
+  }
+}
