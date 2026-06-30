@@ -2,7 +2,8 @@
   "schemaVersion": 1,
   "demoMode": {
     "enabled": true,
-    "source": "demo-data.json"
+    "source": "demo-data.json",
+    "cleanStart": true
   },
   "appMode": "judge",
   "judgeAssignment": {

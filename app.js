@@ -29,6 +29,7 @@ const ui = {
 
 async function init() {
   const config = await new ConfigRepository().loadBootstrap();
+  resetDemoStartupState(config);
   ui.appMode = normalizeAppMode(config.appMode);
   ui.judgeAssignment = config.judgeAssignment || null;
   ui.state = await repository.bootstrap(config);
@@ -40,6 +41,17 @@ async function init() {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("service-worker.js");
   }
+}
+
+function resetDemoStartupState(config) {
+  if (!config.demoMode?.enabled || !config.demoMode?.cleanStart) return;
+  localStorage.removeItem(UI_STATE_KEY);
+  localStorage.removeItem("omrm-auth-session-v1");
+  competitionTimerService.reset();
+  ui.selectedTeamId = null;
+  ui.selectedAssignmentKey = null;
+  ui.currentScoreSheetId = null;
+  ui.invalidFieldIds.clear();
 }
 
 function bindEvents() {

@@ -1,4 +1,4 @@
-const CACHE = "omrm-mvp-client-v19";
+const CACHE = "omrm-mvp-client-v20";
 const ASSETS = [
   "./",
   "./index.html",

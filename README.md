@@ -60,10 +60,13 @@ Tryb demo jest włączony jednym parametrem w `data/app-config.json`:
 {
   "demoMode": {
     "enabled": true,
-    "source": "demo-data.json"
+    "source": "demo-data.json",
+    "cleanStart": true
   }
 }
 ```
+
+Przy `cleanStart: true` każde uruchomienie demo zaczyna się od pustych kart, wyzerowanego timera i bez przywracania poprzedniej sesji. Ustawienie `cleanStart: false` zachowuje dane robocze i pozwala odtworzyć ostatnią sesję, tak jak będzie to potrzebne w trybie zawodów.
 
 Zmiana `enabled` na `false` wyłącza ładowanie przykładowych zespołów, ról, konkurencji, wyników, audytu i kolejki synchronizacji. Dane produkcyjne nadal powinny przyjść z API albo z docelowych plików konfiguracyjnych w `data`. Lokalny zapis jest traktowany jako cache offline i kolejka operacji do synchronizacji.
 

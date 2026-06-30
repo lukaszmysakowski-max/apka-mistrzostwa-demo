@@ -32,7 +32,9 @@ export class LocalStore {
   async replaceFromBootstrap(bootstrap) {
     const existing = await this.load();
     const bootstrapSignature = createBootstrapSignature(bootstrap);
-    const current = existing.meta?.demoMode === Boolean(bootstrap.demoMode?.enabled)
+    const cleanDemoStart = Boolean(bootstrap.demoMode?.enabled && bootstrap.demoMode?.cleanStart);
+    const current = !cleanDemoStart
+      && existing.meta?.demoMode === Boolean(bootstrap.demoMode?.enabled)
       && existing.meta?.bootstrapSignature === bootstrapSignature
       ? existing
       : clone(emptyStore);
@@ -49,7 +51,7 @@ export class LocalStore {
       competitions: mergeById(current.competitions, bootstrap.competitions || []),
       cardTemplates: mergeById(current.cardTemplates, bootstrap.cardTemplates || []),
       deviceAssignments: mergeById(current.deviceAssignments, bootstrap.deviceAssignments || []),
-      scoreSheets: mergeById(current.scoreSheets, bootstrap.scoreSheets || []),
+      scoreSheets: cleanDemoStart ? [] : mergeById(current.scoreSheets, bootstrap.scoreSheets || []),
       auditLog: mergeById(current.auditLog, bootstrap.auditLog || []),
       syncOperations: mergeById(current.syncOperations, bootstrap.syncOperations || []),
       appeals: mergeById(current.appeals, bootstrap.appeals || [])

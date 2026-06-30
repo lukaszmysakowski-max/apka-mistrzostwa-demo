@@ -3,7 +3,7 @@ setlocal EnableExtensions
 
 set "ROOT=C:\Users\Lukasz\Documents\Codex\2026-06-02\files-mentioned-by-the-user-karty-2\outputs\prototype"
 set "PORT=4180"
-set "URL=http://127.0.0.1:%PORT%/?v=20260630-first-row"
+set "URL=http://127.0.0.1:%PORT%/?v=20260630-clean-demo"
 set "CODEX_NODE=%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
 
 cd /d "%ROOT%"
