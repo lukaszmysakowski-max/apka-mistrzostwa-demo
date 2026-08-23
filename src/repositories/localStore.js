@@ -33,8 +33,7 @@ export class LocalStore {
     const existing = await this.load();
     const bootstrapSignature = createBootstrapSignature(bootstrap);
     const cleanDemoStart = Boolean(bootstrap.demoMode?.enabled && bootstrap.demoMode?.cleanStart);
-    const current = !cleanDemoStart
-      && existing.meta?.demoMode === Boolean(bootstrap.demoMode?.enabled)
+    const current = existing.meta?.demoMode === Boolean(bootstrap.demoMode?.enabled)
       && existing.meta?.bootstrapSignature === bootstrapSignature
       ? existing
       : clone(emptyStore);

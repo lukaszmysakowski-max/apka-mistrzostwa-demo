@@ -6,24 +6,196 @@
   <meta name="theme-color" content="#f4f1ea">
   <title>Karty OMRM - MVP klient offline</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=users-v34">
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <strong>OMRM</strong>
-      <span id="deviceLabel">Tablet</span>
+  <section id="login-screen" class="login-screen">
+    <div class="login-panel">
+      <div class="login-logo-box">
+        <img class="login-logo" src="assets/images/logo.jpg" alt="Logo mistrzostw" onerror="this.hidden=true">
+      </div>
+
+      <div class="event-info">Barczewo | 19–22.06.2026</div>
+      <div class="login-separator" aria-hidden="true"></div>
+
+      <div id="loginModeStep" class="login-step">
+        <h1>WYBIERZ TRYB PRACY</h1>
+        <div class="login-mode-switch" role="group" aria-label="Tryb logowania">
+          <button type="button" class="login-mode admin-mode" data-login-mode="admin">ADMIN</button>
+          <button type="button" class="login-mode judge-mode" data-login-mode="judge">SĘDZIA</button>
+        </div>
+      </div>
+
+      <form id="loginForm" class="login-form" hidden>
+        <p class="login-form-mode" id="loginFormMode">Logowanie</p>
+        <label>
+          Login
+          <input id="loginInput" autocomplete="username">
+        </label>
+        <label>
+          Hasło
+          <input id="passwordInput" type="password" autocomplete="current-password">
+        </label>
+        <div id="loginError" class="login-error" role="alert" hidden>Nieprawidłowy login lub hasło.</div>
+        <div class="login-actions">
+          <button type="button" class="secondary" id="loginBackBtn">Wróć</button>
+          <button type="submit">Zaloguj</button>
+        </div>
+      </form>
     </div>
-    <nav aria-label="Widoki">
-      <button class="tab active" data-view="team-screen">Zespół</button>
-      <button class="tab" data-view="ranking-screen">Ranking</button>
-      <button class="tab" data-view="audit-screen">Audyt</button>
-      <button class="tab" data-view="sync-screen">Sync</button>
-    </nav>
-    <div class="sync-pill" id="syncPill">Ładowanie</div>
+  </section>
+
+  <header class="topbar">
+    <div class="admin-brand">
+      <div class="admin-brand-logo">
+        <img src="assets/images/logo.jpg" alt="Logo Mistrzostw Polski w KPP" onerror="this.hidden=true">
+      </div>
+      <div class="admin-brand-text">
+        <strong>MISTRZOSTWA POLSKI W KPP</strong>
+        <span>Barczewo | 19–22.06.2026</span>
+        <span id="deviceLabel" class="device-label">Tablet</span>
+      </div>
+    </div>
+    <div class="session-panel">
+      <span class="session-label">Zalogowany jako</span>
+      <div class="mode-pill" id="modePill">Tryb</div>
+      <div class="sync-pill" id="syncPill">Ładowanie</div>
+    </div>
   </header>
 
   <main>
+    <section id="users-screen" class="view">
+      <div class="admin-layout">
+        <aside class="admin-sidebar" aria-label="Menu administratora">
+          <nav aria-label="Widoki administratora">
+            <button class="tab active" data-view="users-screen"><span class="nav-icon" aria-hidden="true">U</span>Użytkownicy</button>
+            <button class="tab" type="button"><span class="nav-icon" aria-hidden="true">P</span>Przydziały</button>
+            <button class="tab" type="button"><span class="nav-icon" aria-hidden="true">Z</span>Zespoły</button>
+            <button class="tab" data-view="ranking-screen"><span class="nav-icon" aria-hidden="true">R</span>Ranking</button>
+            <button class="tab" data-view="audit-screen"><span class="nav-icon" aria-hidden="true">A</span>Audyt</button>
+            <button class="tab" data-view="sync-screen"><span class="nav-icon" aria-hidden="true">S</span>Synchronizacja</button>
+          </nav>
+          <button type="button" class="logout-button secondary" id="logoutBtn">Wyloguj</button>
+        </aside>
+
+        <div class="admin-main">
+          <div class="wide-panel admin-users-panel">
+            <div class="admin-section-header">
+              <div>
+                <h2>Użytkownicy i uprawnienia</h2>
+              </div>
+              <button type="button" id="addUserBtn">+ Dodaj użytkownika</button>
+            </div>
+
+            <div id="userFormPanel" class="user-form-panel" hidden>
+              <form id="userForm" class="user-form">
+                <h3 id="userFormTitle">Dodaj użytkownika</h3>
+                <div id="userFormError" class="login-error" role="alert" hidden></div>
+                <input type="hidden" id="userIdInput">
+                <div class="form-grid">
+                  <label>
+                    Imię
+                    <input id="userFirstNameInput" autocomplete="given-name">
+                  </label>
+                  <label>
+                    Nazwisko
+                    <input id="userLastNameInput" autocomplete="family-name">
+                  </label>
+                  <label>
+                    Login
+                    <input id="userAccountInput" autocomplete="off">
+                  </label>
+                  <label id="userPasswordLabel">
+                    Hasło
+                    <input id="userSecretInput" type="password" autocomplete="off">
+                  </label>
+                </div>
+                <fieldset class="checkbox-group">
+                  <legend>Uprawnienia</legend>
+                  <label><input type="checkbox" id="roleJudgeInput" value="judge"> Sędzia</label>
+                  <label><input type="checkbox" id="roleAdminInput" value="admin"> Administrator</label>
+                </fieldset>
+                <fieldset class="status-group">
+                  <legend>Status</legend>
+                  <label><input type="radio" name="userStatus" value="active" checked> Aktywny</label>
+                  <label><input type="radio" name="userStatus" value="inactive"> Nieaktywny</label>
+                </fieldset>
+                <div class="action-row">
+                  <button type="button" class="secondary" id="cancelUserFormBtn">Anuluj</button>
+                  <button type="submit" id="saveUserBtn">Dodaj użytkownika</button>
+                </div>
+              </form>
+            </div>
+
+            <div id="passwordPanel" class="user-form-panel" hidden>
+              <form id="passwordForm" class="user-form password-form">
+                <h3 id="passwordFormTitle">Zmień hasło</h3>
+                <div id="passwordFormError" class="login-error" role="alert" hidden></div>
+                <input type="hidden" id="passwordUserIdInput">
+                <label>
+                  Nowe hasło
+                  <input id="newPasswordInput" type="password" autocomplete="new-password">
+                </label>
+                <div class="action-row">
+                  <button type="button" class="secondary" id="cancelPasswordBtn">Anuluj</button>
+                  <button type="submit">Zapisz hasło</button>
+                </div>
+              </form>
+            </div>
+
+            <div id="bulkMessage" class="bulk-message" role="alert" hidden></div>
+
+            <div id="bulkActionsBar" class="bulk-actions-bar" hidden>
+              <strong>Zaznaczono: <span id="selectedUsersCount">0</span></strong>
+              <div class="bulk-actions">
+                <button type="button" class="secondary compact-button" data-bulk-menu="roles">Uprawnienia</button>
+                <button type="button" class="secondary compact-button" data-bulk-menu="status">Status</button>
+                <button type="button" class="secondary compact-button danger-button" data-bulk-action="delete">Usuń</button>
+              </div>
+              <div id="bulkRolesMenu" class="bulk-menu" hidden>
+                <button type="button" data-bulk-action="add-role" data-role="judge">Dodaj uprawnienie „Sędzia”</button>
+                <button type="button" class="secondary" data-bulk-action="remove-role" data-role="judge">Usuń uprawnienie „Sędzia”</button>
+                <button type="button" data-bulk-action="add-role" data-role="admin">Dodaj uprawnienie „Administrator”</button>
+                <button type="button" class="secondary" data-bulk-action="remove-role" data-role="admin">Usuń uprawnienie „Administrator”</button>
+              </div>
+              <div id="bulkStatusMenu" class="bulk-menu" hidden>
+                <button type="button" data-bulk-action="set-status" data-status="active">Ustaw jako aktywnych</button>
+                <button type="button" class="secondary" data-bulk-action="set-status" data-status="inactive">Ustaw jako nieaktywnych</button>
+              </div>
+            </div>
+
+            <div class="table-shell">
+              <table class="users-table">
+                <thead>
+                  <tr>
+                    <th class="select-column">
+                      <label class="select-all-label">
+                        <input type="checkbox" id="selectAllUsers">
+                        <span>Zaznacz wszystkich</span>
+                      </label>
+                    </th>
+                    <th>Imię i nazwisko</th>
+                    <th>Login</th>
+                    <th>Uprawnienia</th>
+                    <th>Przydziały</th>
+                    <th>Status</th>
+                    <th>Akcje</th>
+                  </tr>
+                </thead>
+                <tbody id="usersBody"></tbody>
+              </table>
+            </div>
+
+            <div id="userCards" class="user-cards"></div>
+
+            <div class="table-footer">
+              <strong>Razem użytkowników: <span id="usersCount">0</span></strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="team-screen" class="view active touch-screen">
       <div class="workflow-panel">
         <p class="eyebrow">Wybór zespołu</p>
@@ -178,6 +350,17 @@
     <time datetime="2026-06-30">30.06.2026</time>
   </footer>
 
-  <script type="module" src="app.js"></script>
+  <dialog id="confirmDialog" class="confirm-dialog">
+    <form method="dialog">
+      <h3 id="confirmTitle">Potwierdzenie</h3>
+      <p id="confirmMessage"></p>
+      <div class="dialog-actions">
+        <button type="button" class="secondary" id="confirmCancelBtn">Anuluj</button>
+        <button type="button" class="danger-button" id="confirmAcceptBtn">Usuń użytkownika</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js?v=users-v34"></script>
 </body>
 </html>

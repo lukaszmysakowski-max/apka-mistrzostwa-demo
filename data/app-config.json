@@ -5,6 +5,24 @@
     "source": "demo-data.json",
     "cleanStart": true
   },
+  "demoAuth": {
+    "accounts": [
+      {
+        "id": "demo-admin-lukasz",
+        "login": "LukaszMysak",
+        "password": "Luk",
+        "mode": "admin",
+        "displayName": "Lukasz Mysak"
+      },
+      {
+        "id": "demo-judge-placeholder",
+        "login": "sedzia",
+        "password": "demo",
+        "mode": "judge",
+        "displayName": "Sędzia Demo"
+      }
+    ]
+  },
   "appMode": "judge",
   "judgeAssignment": {
     "competitionId": "competition-kill-bill",
@@ -20,7 +38,19 @@
   "currentUser": null,
   "events": [],
   "teams": [],
-  "users": [],
+  "users": [
+    {
+      "id": "demo-admin-lukasz",
+      "firstName": "Łukasz",
+      "lastName": "Mysakowski",
+      "login": "LukaszMysak",
+      "password": "Luk",
+      "roles": ["admin"],
+      "status": "active",
+      "deletedAt": null,
+      "deletedBy": null
+    }
+  ],
   "roles": [],
   "permissions": [],
   "competitions": [

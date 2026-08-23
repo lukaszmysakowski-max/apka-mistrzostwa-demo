@@ -25,6 +25,17 @@ export class DomainRepository {
     return (await this.store.load()).cardTemplates.filter(item => !item.deletedAt);
   }
 
+  async listUsers() {
+    return (await this.store.load()).users.filter(item => !item.deletedAt);
+  }
+
+  async upsertUser(user) {
+    const state = await this.store.load();
+    state.users = upsertById(state.users, user);
+    await this.store.save(state);
+    return user;
+  }
+
   async listScoreSheets() {
     return (await this.store.load()).scoreSheets.filter(item => !item.deletedAt);
   }
