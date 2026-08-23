@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f4f1ea">
   <title>Karty OMRM - MVP klient offline</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=users-v50">
+  <link rel="stylesheet" href="styles.css?v=users-v51">
 </head>
 <body>
   <section id="login-screen" class="login-screen">
@@ -56,6 +56,10 @@
       </div>
     </button>
     <button type="button" class="event-edit-button" id="eventEditBtn" aria-label="Edytuj dane zawodów" title="Edytuj dane zawodów">✎</button>
+    <button type="button" class="admin-menu-toggle" id="adminMenuToggle" aria-expanded="false">
+      <span aria-hidden="true">☰</span>
+      Menu
+    </button>
     <div class="session-panel">
       <span class="session-label">Zalogowany jako</span>
       <div class="mode-pill" id="modePill">Tryb</div>
@@ -520,6 +524,6 @@
 
   <div id="appNotice" class="app-notice" role="status" hidden></div>
 
-  <script type="module" src="app.js?v=users-v50"></script>
+  <script type="module" src="app.js?v=users-v51"></script>
 </body>
 </html>

@@ -19,10 +19,10 @@
         "login": "LukaszMysak",
         "password": "Luk",
         "mode": "admin",
-        "displayName": "Lukasz Mysak"
+        "displayName": "Łukasz Mysakowski"
       },
       {
-        "id": "demo-judge-placeholder",
+        "id": "user-demo-judge-1",
         "login": "sedzia",
         "password": "demo",
         "mode": "judge",
@@ -45,59 +45,11 @@
   "currentUser": null,
   "events": [],
   "teams": [],
-  "users": [
-    {
-      "id": "demo-admin-lukasz",
-      "firstName": "Łukasz",
-      "lastName": "Mysakowski",
-      "login": "LukaszMysak",
-      "password": "Luk",
-      "roles": ["admin"],
-      "status": "active",
-      "deletedAt": null,
-      "deletedBy": null
-    },
-    {
-      "id": "user-adam-dowgiallo",
-      "firstName": "Adam",
-      "lastName": "Dowgiałło",
-      "login": "AdamDowgiallo",
-      "password": "ADM",
-      "roles": ["admin"],
-      "status": "active",
-      "deletedAt": null,
-      "deletedBy": null
-    }
-  ],
+  "users": [],
   "roles": [],
   "permissions": [],
-  "competitions": [
-    {
-      "id": "competition-zwirownia",
-      "eventId": null,
-      "name": "Żwirownia",
-      "code": "ZWIROWNIA",
-      "rankingOrder": 1,
-      "timer": {
-        "durationSeconds": 600,
-        "warningThresholdSeconds": 120
-      },
-      "parts": [
-        {
-          "id": "competition-part-zwirownia-main",
-          "name": "Żwirownia",
-          "code": "ZWIROWNIA",
-          "cardTemplateId": "card-template-zwirownia-2026",
-          "weight": 1
-        }
-      ],
-      "deletedAt": null,
-      "deletedBy": null
-    }
-  ],
-  "cardTemplates": [
-    "card-template-zwirownia-2026.json"
-  ],
+  "competitions": [],
+  "cardTemplates": [],
   "deviceAssignments": [],
   "appeals": []
 }

@@ -345,23 +345,41 @@
   ],
   "users": [
     {
-      "id": "user-demo-admin",
-      "login": "admin.demo",
-      "displayName": "Administrator Demo",
+      "id": "demo-admin-lukasz",
+      "firstName": "Łukasz",
+      "lastName": "Mysakowski",
+      "login": "LukaszMysak",
+      "password": "Luk",
+      "roles": [
+        "admin"
+      ],
+      "status": "active",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "user-adam-dowgiallo",
+      "firstName": "Adam",
+      "lastName": "Dowgiałło",
+      "login": "AdamDowgiallo",
+      "password": "ADM",
+      "roles": [
+        "admin"
+      ],
+      "status": "active",
       "deletedAt": null,
       "deletedBy": null
     },
     {
       "id": "user-demo-judge-1",
-      "login": "sedzia.demo",
-      "displayName": "Sędzia Demo",
-      "deletedAt": null,
-      "deletedBy": null
-    },
-    {
-      "id": "user-demo-captain-01",
-      "login": "kapitan01.demo",
-      "displayName": "Kapitan 01",
+      "firstName": "Sędzia",
+      "lastName": "Demo",
+      "login": "sedzia",
+      "password": "demo",
+      "roles": [
+        "judge"
+      ],
+      "status": "active",
       "deletedAt": null,
       "deletedBy": null
     }
@@ -650,28 +668,7 @@
       "entityVersion": 3
     }
   ],
-  "syncOperations": [
-    {
-      "id": "sync-demo-queued-1",
-      "client_operation_id": "client-operation-demo-queued-1",
-      "device_id": "device-demo-tab-07",
-      "type": "score_sheet.approve",
-      "entity": "score_sheet",
-      "entity_id": "score-demo-02-zwirownia",
-      "entity_version": 2,
-      "payload": {
-        "scoreSheetId": "score-demo-02-zwirownia"
-      },
-      "status": "queued",
-      "retry_count": 0,
-      "max_retries": 5,
-      "next_retry_at": "2026-06-02T14:00:00.000Z",
-      "created_at": "2026-06-02T12:30:00.000Z",
-      "sent_at": null,
-      "conflict": null,
-      "error": null
-    }
-  ],
+  "syncOperations": [],
   "appeals": [
     {
       "id": "appeal-demo-1",

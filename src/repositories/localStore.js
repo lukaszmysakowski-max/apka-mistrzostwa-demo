@@ -42,22 +42,22 @@ export class LocalStore {
     const next = {
       ...current,
       meta: { ...current.meta, schemaVersion: 1, demoMode: Boolean(bootstrap.demoMode?.enabled), bootstrapSignature },
-      eventConfig: { ...(bootstrap.eventConfig || {}), ...(current.eventConfig || {}) },
+      eventConfig: cleanDemoStart ? clone(bootstrap.eventConfig || null) : { ...(bootstrap.eventConfig || {}), ...(current.eventConfig || {}) },
       device: bootstrap.device,
       currentUser: bootstrap.currentUser,
-      events: mergeById(current.events, bootstrap.events || []),
+      events: cleanDemoStart ? clone(bootstrap.events || []) : mergeById(current.events, bootstrap.events || []),
       teams: cleanDemoStart ? clone(bootstrap.teams || []) : mergeById(current.teams, bootstrap.teams || []),
-      users: mergeUsers(current.users, bootstrap.users || []),
-      roles: mergeById(current.roles, bootstrap.roles || []),
-      permissions: mergeById(current.permissions, bootstrap.permissions || []),
-      competitions: mergeById(current.competitions, bootstrap.competitions || []),
-      cardTemplates: mergeById(current.cardTemplates, bootstrap.cardTemplates || []),
-      deviceAssignments: mergeById(current.deviceAssignments, bootstrap.deviceAssignments || []),
-      scoreSheets: cleanDemoStart ? [] : mergeById(current.scoreSheets, bootstrap.scoreSheets || []),
-      auditLog: mergeById(current.auditLog, bootstrap.auditLog || []),
-      syncOperations: mergeById(current.syncOperations, bootstrap.syncOperations || []),
-      messages: mergeById(current.messages, bootstrap.messages || []),
-      appeals: mergeById(current.appeals, bootstrap.appeals || [])
+      users: cleanDemoStart ? clone(bootstrap.users || []) : mergeUsers(current.users, bootstrap.users || []),
+      roles: cleanDemoStart ? clone(bootstrap.roles || []) : mergeById(current.roles, bootstrap.roles || []),
+      permissions: cleanDemoStart ? clone(bootstrap.permissions || []) : mergeById(current.permissions, bootstrap.permissions || []),
+      competitions: cleanDemoStart ? clone(bootstrap.competitions || []) : mergeById(current.competitions, bootstrap.competitions || []),
+      cardTemplates: cleanDemoStart ? clone(bootstrap.cardTemplates || []) : mergeById(current.cardTemplates, bootstrap.cardTemplates || []),
+      deviceAssignments: cleanDemoStart ? clone(bootstrap.deviceAssignments || []) : mergeById(current.deviceAssignments, bootstrap.deviceAssignments || []),
+      scoreSheets: cleanDemoStart ? clone(bootstrap.scoreSheets || []) : mergeById(current.scoreSheets, bootstrap.scoreSheets || []),
+      auditLog: cleanDemoStart ? clone(bootstrap.auditLog || []) : mergeById(current.auditLog, bootstrap.auditLog || []),
+      syncOperations: cleanDemoStart ? clone(bootstrap.syncOperations || []) : mergeById(current.syncOperations, bootstrap.syncOperations || []),
+      messages: cleanDemoStart ? clone(bootstrap.messages || []) : mergeById(current.messages, bootstrap.messages || []),
+      appeals: cleanDemoStart ? clone(bootstrap.appeals || []) : mergeById(current.appeals, bootstrap.appeals || [])
     };
     await this.save(next);
     return next;
@@ -111,9 +111,18 @@ function createBootstrapSignature(bootstrap) {
   return JSON.stringify({
     schemaVersion: bootstrap.schemaVersion || 1,
     demoMode: Boolean(bootstrap.demoMode?.enabled),
+    eventConfig: bootstrap.eventConfig || null,
     teams: (bootstrap.teams || []).map(item => `${item.id}:${item.name}:${item.number || ""}`),
-    competitions: (bootstrap.competitions || []).map(item => item.id),
-    cardTemplates: (bootstrap.cardTemplates || []).map(item => item.id)
+    users: (bootstrap.users || []).map(item => `${item.id}:${item.login}:${item.roles?.join(",") || ""}:${item.status || ""}`),
+    competitions: (bootstrap.competitions || []).map(item => ({
+      id: item.id,
+      competitionNumber: item.competitionNumber || item.number || "",
+      name: item.name || "",
+      minJudges: item.minJudges || "",
+      equipmentChecklist: item.equipmentChecklist || []
+    })),
+    cardTemplates: (bootstrap.cardTemplates || []).map(item => `${item.id}:${item.version || ""}`),
+    deviceAssignments: (bootstrap.deviceAssignments || []).map(item => `${item.id}:${item.judgeUserId || ""}:${item.competitionId || ""}:${item.deletedAt || ""}`)
   });
 }
 

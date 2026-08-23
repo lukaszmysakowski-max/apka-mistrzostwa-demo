@@ -106,6 +106,7 @@ function bindEvents() {
   $("#loginBackBtn").addEventListener("click", showLoginModeChoice);
   $("#adminHomeButton").addEventListener("click", openAdminHome);
   $("#eventEditBtn").addEventListener("click", openEventConfigDialog);
+  $("#adminMenuToggle").addEventListener("click", toggleAdminMenu);
   $("#eventConfigCancelBtn").addEventListener("click", closeEventConfigDialog);
   $("#eventConfigForm").addEventListener("submit", saveEventConfigFromForm);
   document.querySelectorAll("[data-logout]").forEach(button => {
@@ -224,7 +225,19 @@ function openAdminHome() {
   resetAssignmentsHome();
   resetTeamsHome();
   resetUsersHome();
+  closeAdminMenu();
   showView("users-screen");
+}
+
+function toggleAdminMenu() {
+  const isOpen = !document.body.classList.contains("admin-menu-open");
+  document.body.classList.toggle("admin-menu-open", isOpen);
+  $("#adminMenuToggle")?.setAttribute("aria-expanded", String(isOpen));
+}
+
+function closeAdminMenu() {
+  document.body.classList.remove("admin-menu-open");
+  $("#adminMenuToggle")?.setAttribute("aria-expanded", "false");
 }
 
 function renderEventBranding() {
@@ -402,6 +415,7 @@ function applyLoggedOutState() {
 }
 
 function logout() {
+  closeAdminMenu();
   sessionStorage.removeItem(AUTH_SESSION_KEY);
   ui.authSession = null;
   ui.currentScoreSheetId = null;
@@ -467,6 +481,7 @@ async function navigateToView(id) {
   if (id === "users-screen") resetUsersHome();
   if (id === "messages-screen") resetMessagesHome();
   if (id === "sync-screen") resetSyncHome();
+  closeAdminMenu();
   showView(id);
 }
 

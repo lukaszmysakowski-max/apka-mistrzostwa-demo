@@ -239,6 +239,17 @@ body[data-app-mode="admin"].authenticated .event-edit-button {
   align-items: center;
   justify-content: center;
 }
+.admin-menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border-color: var(--admin-accent-dark);
+  background: var(--admin-accent);
+  padding: 8px 12px;
+  font-size: 15px;
+}
 .admin-brand-logo {
   flex: 0 0 72px;
   width: 72px;
@@ -268,6 +279,10 @@ body[data-app-mode="admin"].authenticated .event-edit-button {
 }
 nav { display: flex; gap: 8px; justify-content: center; }
 button, select, input, textarea { font: inherit; }
+button {
+  max-width: 100%;
+  white-space: normal;
+}
 button, select {
   min-height: 52px;
   border: 2px solid #123f3c;
@@ -401,6 +416,7 @@ main {
   width: 100%;
 }
 .admin-users-panel {
+  min-width: 0;
   display: grid;
   align-content: start;
   gap: 22px;
@@ -437,6 +453,7 @@ main {
   box-shadow: 0 8px 18px rgba(157, 31, 24, .18);
 }
 .admin-header-actions {
+  min-width: 0;
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
@@ -532,6 +549,7 @@ main {
 }
 .table-shell {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   border: 1px solid var(--admin-border);
   border-radius: 10px;
@@ -738,6 +756,12 @@ button.danger-button:not(.secondary),
 }
 .assignments-panel {
   gap: 24px;
+}
+#assignmentsContent,
+#teamsContent,
+#messagesContent,
+#syncDashboard {
+  min-width: 0;
 }
 .teams-panel {
   gap: 24px;
@@ -1719,23 +1743,59 @@ small { color: var(--muted); word-break: break-all; }
 
 @media (max-width: 900px) {
   .topbar {
-    position: static;
-    align-items: flex-start;
-    flex-direction: column;
+    position: sticky;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  body[data-app-mode="admin"].authenticated .admin-menu-toggle {
+    display: inline-flex;
+  }
+  .admin-brand {
+    gap: 10px;
+  }
+  .admin-brand-text strong {
+    font-size: clamp(16px, 4.4vw, 22px);
+    line-height: 1.08;
+  }
+  .topbar span {
+    font-size: 13px;
   }
   .session-panel {
+    grid-column: 1 / -1;
     justify-items: start;
     text-align: left;
+    width: 100%;
   }
   .admin-layout {
     grid-template-columns: 1fr;
-    padding: 14px;
+    padding: 12px;
+    gap: 12px;
   }
   .admin-sidebar {
+    display: none;
+    position: fixed;
+    top: 92px;
+    left: 12px;
+    right: 12px;
+    z-index: 80;
+    width: auto;
+    max-height: calc(100vh - 112px);
     min-height: auto;
+    overflow-y: auto;
+    box-shadow: 0 20px 48px rgba(24, 20, 18, .28);
+  }
+  body.admin-menu-open .view.active .admin-sidebar {
+    display: grid;
   }
   .admin-sidebar nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+  }
+  .admin-users-panel {
+    min-height: auto;
+    padding: 20px;
   }
   .sync-dashboard-grid {
     grid-template-columns: 1fr;
@@ -1766,6 +1826,11 @@ small { color: var(--muted); word-break: break-all; }
 @media (max-width: 1080px) {
   .table-shell {
     display: none;
+  }
+  .import-users-panel .table-shell,
+  .checklist-workbook-preview .table-shell,
+  .competition-settings-block .table-shell {
+    display: block;
   }
   .user-cards {
     display: grid;
@@ -1831,11 +1896,42 @@ small { color: var(--muted); word-break: break-all; }
     width: 58px;
     height: 58px;
   }
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .event-edit-button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .admin-menu-toggle {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+  .admin-brand {
+    max-width: 100%;
+  }
+  .admin-brand-text {
+    overflow-wrap: anywhere;
+  }
   .admin-sidebar nav {
     grid-template-columns: 1fr;
   }
+  .admin-layout,
+  main {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
   .admin-users-panel {
-    padding: 18px;
+    padding: 14px;
+    gap: 16px;
+  }
+  .admin-section-header {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .admin-section-header h2,
+  .assignments-detail-header h2 {
+    font-size: clamp(24px, 8vw, 32px);
   }
   .admin-section-header #addUserBtn,
   .admin-section-header #addTeamBtn,
@@ -1857,5 +1953,27 @@ small { color: var(--muted); word-break: break-all; }
   .bulk-menu button,
   .dialog-actions button {
     width: 100%;
+  }
+  .confirm-dialog {
+    width: calc(100vw - 18px);
+  }
+  .confirm-dialog form {
+    padding: 16px;
+  }
+  .assignment-tile {
+    min-height: 140px;
+    padding: 18px;
+  }
+  .assignment-tile strong {
+    font-size: 24px;
+  }
+  .checklist-item-row,
+  .assignment-check-row,
+  .user-card {
+    padding: 12px;
+  }
+  .sync-details-panel,
+  .sync-history-panel {
+    padding: 12px;
   }
 }
