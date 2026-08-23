@@ -412,9 +412,12 @@
     {
       "id": "competition-zwirownia",
       "eventId": "event-demo-2026",
+      "competitionNumber": "1",
       "name": "Żwirownia",
       "code": "ZWIROWNIA",
       "rankingOrder": 1,
+      "minJudges": 1,
+      "equipmentChecklist": [],
       "timer": {
         "durationSeconds": 600,
         "warningThresholdSeconds": 120
@@ -434,9 +437,12 @@
     {
       "id": "competition-blair",
       "eventId": "event-demo-2026",
+      "competitionNumber": "2",
       "name": "Blair Witch Projeckt",
       "code": "BLAIR_WITCH",
       "rankingOrder": 2,
+      "minJudges": 1,
+      "equipmentChecklist": [],
       "timer": {
         "durationSeconds": 600,
         "warningThresholdSeconds": 120
@@ -463,9 +469,12 @@
     {
       "id": "competition-szybcy",
       "eventId": "event-demo-2026",
+      "competitionNumber": "3",
       "name": "Szybcy i wściekli",
       "code": "SZYBCY",
       "rankingOrder": 3,
+      "minJudges": 1,
+      "equipmentChecklist": [],
       "timer": {
         "durationSeconds": 600,
         "warningThresholdSeconds": 120
@@ -492,9 +501,12 @@
     {
       "id": "competition-kill-bill",
       "eventId": "event-demo-2026",
+      "competitionNumber": "6",
       "name": "Kill Bill",
       "code": "KILL_BILL",
       "rankingOrder": 6,
+      "minJudges": 1,
+      "equipmentChecklist": [],
       "timer": {
         "durationSeconds": 600,
         "warningThresholdSeconds": 120
@@ -514,9 +526,12 @@
     {
       "id": "competition-trainspotting",
       "eventId": "event-demo-2026",
+      "competitionNumber": "7",
       "name": "Trainspotting",
       "code": "TRAINSPOTTING",
       "rankingOrder": 7,
+      "minJudges": 1,
+      "equipmentChecklist": [],
       "timer": {
         "durationSeconds": 600,
         "warningThresholdSeconds": 120

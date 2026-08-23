@@ -5,6 +5,13 @@
     "source": "demo-data.json",
     "cleanStart": true
   },
+  "eventConfig": {
+    "eventName": "MISTRZOSTWA POLSKI W KPP",
+    "location": "Barczewo",
+    "dateFrom": "2026-06-19",
+    "dateTo": "2026-06-22",
+    "logo": "assets/images/logo.jpg"
+  },
   "demoAuth": {
     "accounts": [
       {
@@ -45,6 +52,17 @@
       "lastName": "Mysakowski",
       "login": "LukaszMysak",
       "password": "Luk",
+      "roles": ["admin"],
+      "status": "active",
+      "deletedAt": null,
+      "deletedBy": null
+    },
+    {
+      "id": "user-adam-dowgiallo",
+      "firstName": "Adam",
+      "lastName": "Dowgiałło",
+      "login": "AdamDowgiallo",
+      "password": "ADM",
       "roles": ["admin"],
       "status": "active",
       "deletedAt": null,

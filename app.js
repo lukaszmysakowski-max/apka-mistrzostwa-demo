@@ -25,6 +25,32 @@ const ui = {
   selectedLoginMode: null,
   editingUserId: null,
   passwordUserId: null,
+  userImportRows: [],
+  userImportFileName: "",
+  assignmentsView: "home",
+  selectedAssignmentCompetitionId: null,
+  selectedAssignmentJudgeId: null,
+  checklistDraftCompetitionId: null,
+  equipmentChecklistDraft: [],
+  checklistImportRows: [],
+  checklistImportFileName: "",
+  selectedCompetitionIds: new Set(),
+  competitionImportRows: [],
+  competitionImportFileName: "",
+  competitionImportVisible: false,
+  teamsView: "list",
+  editingTeamId: null,
+  teamImportRows: [],
+  teamImportFileName: "",
+  selectedTeamIds: new Set(),
+  teamNumberDrafts: {},
+  invalidTeamNumberIds: new Set(),
+  rankingLastUpdatedAt: null,
+  messagesView: "all",
+  messageComposerOpen: false,
+  messageUnconfirmedId: null,
+  editingChecklistItemId: null,
+  syncConnectionExpanded: false,
   selectedUserIds: new Set(),
   pendingConfirmation: null,
   savingUser: false,
@@ -78,8 +104,20 @@ function bindEvents() {
   });
   $("#loginForm").addEventListener("submit", handleLogin);
   $("#loginBackBtn").addEventListener("click", showLoginModeChoice);
-  $("#logoutBtn").addEventListener("click", logout);
+  $("#adminHomeButton").addEventListener("click", openAdminHome);
+  $("#eventEditBtn").addEventListener("click", openEventConfigDialog);
+  $("#eventConfigCancelBtn").addEventListener("click", closeEventConfigDialog);
+  $("#eventConfigForm").addEventListener("submit", saveEventConfigFromForm);
+  document.querySelectorAll("[data-logout]").forEach(button => {
+    button.addEventListener("click", logout);
+  });
   $("#addUserBtn").addEventListener("click", openAddUserForm);
+  $("#importUsersBtn").addEventListener("click", openImportUsersPanel);
+  $("#cancelImportUsersBtn").addEventListener("click", closeImportUsersPanel);
+  $("#importUsersFileInput").addEventListener("change", renderImportUsersFileInfo);
+  $("#importUsersPanel").addEventListener("input", handleUserImportInput);
+  $("#importUsersPanel").addEventListener("change", handleUserImportInput);
+  $("#confirmImportUsersBtn").addEventListener("click", importValidUsers);
   $("#cancelUserFormBtn").addEventListener("click", closeUserForm);
   $("#userForm").addEventListener("submit", saveUserFromForm);
   $("#saveUserBtn").addEventListener("click", saveUserFromForm);
@@ -94,6 +132,21 @@ function bindEvents() {
   $("#bulkActionsBar").addEventListener("click", handleBulkActionClick);
   $("#confirmCancelBtn").addEventListener("click", closeConfirmDialog);
   $("#confirmAcceptBtn").addEventListener("click", acceptConfirmDialog);
+  $("#refreshRankingBtn").addEventListener("click", renderRanking);
+  $("#assignmentsContent").addEventListener("click", handleAssignmentsClick);
+  $("#assignmentsContent").addEventListener("change", handleAssignmentsChange);
+  $("#assignmentsContent").addEventListener("dragstart", handleAssignmentDragStart);
+  $("#assignmentsContent").addEventListener("dragover", handleAssignmentDragOver);
+  $("#assignmentsContent").addEventListener("dragleave", handleAssignmentDragLeave);
+  $("#assignmentsContent").addEventListener("drop", handleAssignmentDrop);
+  $("#assignmentsContent").addEventListener("dragend", clearAssignmentDragState);
+  $("#teamsContent").addEventListener("click", handleTeamsClick);
+  $("#teamsContent").addEventListener("submit", handleTeamsSubmit);
+  $("#teamsContent").addEventListener("change", handleTeamsChange);
+  $("#messagesContent").addEventListener("click", handleMessagesClick);
+  $("#messagesContent").addEventListener("submit", handleMessagesSubmit);
+  $("#messagesContent").addEventListener("change", handleMessagesChange);
+  $("#syncDashboard").addEventListener("click", handleSyncDashboardClick);
 
   document.querySelectorAll(".tab[data-view]").forEach(button => {
     button.addEventListener("click", () => navigateToView(button.dataset.view));
@@ -164,6 +217,97 @@ function showLoginModeChoice() {
   $("#loginInput").value = "";
   $("#passwordInput").value = "";
   document.querySelectorAll("[data-login-mode]").forEach(button => button.classList.remove("active"));
+}
+
+function openAdminHome() {
+  if (ui.appMode !== "admin") return;
+  resetAssignmentsHome();
+  resetTeamsHome();
+  resetUsersHome();
+  showView("users-screen");
+}
+
+function renderEventBranding() {
+  const eventConfig = getEventConfig();
+  const eventMeta = formatEventMeta(eventConfig);
+  const loginLogo = $(".login-logo");
+  const headerLogo = $("#headerLogo");
+  if (loginLogo) loginLogo.src = eventConfig.logo;
+  if (headerLogo) headerLogo.src = eventConfig.logo;
+  const eventInfo = $(".event-info");
+  if (eventInfo) eventInfo.textContent = eventMeta;
+  const headerEventName = $("#headerEventName");
+  if (headerEventName) headerEventName.textContent = eventConfig.eventName;
+  const headerEventMeta = $("#headerEventMeta");
+  if (headerEventMeta) headerEventMeta.textContent = eventMeta;
+}
+
+function openEventConfigDialog() {
+  if (ui.appMode !== "admin") return;
+  const eventConfig = getEventConfig();
+  $("#eventNameInput").value = eventConfig.eventName;
+  $("#eventLocationInput").value = eventConfig.location;
+  $("#eventDateFromInput").value = eventConfig.dateFrom;
+  $("#eventDateToInput").value = eventConfig.dateTo;
+  hideEventConfigError();
+  const dialog = $("#eventConfigDialog");
+  if (typeof dialog.showModal === "function") dialog.showModal();
+  else dialog.setAttribute("open", "");
+}
+
+function closeEventConfigDialog() {
+  const dialog = $("#eventConfigDialog");
+  if (typeof dialog.close === "function") dialog.close();
+  else dialog.removeAttribute("open");
+  hideEventConfigError();
+}
+
+async function saveEventConfigFromForm(event) {
+  event.preventDefault();
+  const eventName = $("#eventNameInput").value.trim();
+  const location = $("#eventLocationInput").value.trim();
+  const dateFrom = $("#eventDateFromInput").value;
+  const dateTo = $("#eventDateToInput").value;
+  if (dateFrom && dateTo && dateFrom > dateTo) {
+    showEventConfigError("Data rozpoczęcia nie może być późniejsza niż data zakończenia.");
+    return;
+  }
+  const previous = getEventConfig();
+  await repository.updateEventConfig({
+    ...previous,
+    eventName,
+    location,
+    dateFrom,
+    dateTo
+  });
+  ui.state = await repository.getState();
+  renderEventBranding();
+  closeEventConfigDialog();
+  showAppNotice("Dane zawodów zapisane.");
+}
+
+function showEventConfigError(message) {
+  const box = $("#eventConfigError");
+  box.textContent = message;
+  box.hidden = false;
+}
+
+function hideEventConfigError() {
+  const box = $("#eventConfigError");
+  box.textContent = "";
+  box.hidden = true;
+}
+
+function showAppNotice(message) {
+  const box = $("#appNotice");
+  if (!box) return;
+  box.textContent = message;
+  box.hidden = false;
+  window.clearTimeout(showAppNotice.timeoutId);
+  showAppNotice.timeoutId = window.setTimeout(() => {
+    box.hidden = true;
+    box.textContent = "";
+  }, 3000);
 }
 
 async function handleLogin(event) {
@@ -283,21 +427,32 @@ function hideTimerStartNotice() {
 
 async function renderAll() {
   ui.state = await repository.getState();
-  $("#deviceLabel").textContent = ui.state.device?.label || "Tablet";
+  const deviceLabel = $("#deviceLabel");
+  if (deviceLabel) deviceLabel.textContent = ui.state.device?.label || "Tablet";
+  renderEventBranding();
   applyAppMode();
   renderTeamList();
   renderUsers();
+  renderAdminAssignments();
+  renderAdminTeams();
   renderSyncStatus();
   await renderRanking();
   await renderAudit();
-  await renderSyncQueue();
+  await renderMessages();
+  await renderSyncDashboard();
 }
 
 function showView(id) {
   if (!canShowView(id)) id = "team-screen";
   document.querySelectorAll(".view, .tab").forEach(el => el.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
-  document.querySelector(`[data-view="${id}"]`)?.classList.add("active");
+  document.querySelectorAll(`[data-view="${id}"]`).forEach(el => el.classList.add("active"));
+  if (id === "users-screen") renderUsers();
+  if (id === "assignments-screen") renderAdminAssignments();
+  if (id === "teams-screen") renderAdminTeams();
+  if (id === "ranking-screen") renderRanking();
+  if (id === "messages-screen") renderMessages();
+  if (id === "sync-screen") renderSyncDashboard();
   window.scrollTo(0, 0);
 }
 
@@ -307,12 +462,17 @@ async function navigateToView(id) {
     && id !== "finish-screen"
     && ui.currentScoreSheetId;
   if (leavingActiveCard && !(await validateActiveCardBeforeClose())) return;
+  if (id === "assignments-screen") resetAssignmentsHome();
+  if (id === "teams-screen") resetTeamsHome();
+  if (id === "users-screen") resetUsersHome();
+  if (id === "messages-screen") resetMessagesHome();
+  if (id === "sync-screen") resetSyncHome();
   showView(id);
 }
 
 function applyAppMode() {
   document.body.dataset.appMode = ui.appMode;
-  const adminOnlyViews = ["users-screen", "ranking-screen", "audit-screen", "sync-screen", "sync-error-screen"];
+  const adminOnlyViews = ["users-screen", "assignments-screen", "teams-screen", "ranking-screen", "messages-screen", "audit-screen", "sync-screen", "sync-error-screen"];
   for (const viewId of adminOnlyViews) {
     const view = document.getElementById(viewId);
     if (view) view.hidden = ui.appMode !== "admin";
@@ -333,7 +493,7 @@ function applyAppMode() {
 
 function canShowView(id) {
   if (ui.appMode === "admin") return true;
-  return !["users-screen", "ranking-screen", "audit-screen", "sync-screen", "sync-error-screen"].includes(id);
+  return !["users-screen", "assignments-screen", "teams-screen", "ranking-screen", "messages-screen", "audit-screen", "sync-screen", "sync-error-screen"].includes(id);
 }
 
 function renderUsers() {
@@ -486,6 +646,40 @@ function normalizeRole(role) {
   return null;
 }
 
+function isImportTruthy(value) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return ["1", "tak", "true", "yes", "x", "✓", "t", "y"].includes(normalized);
+}
+
+function normalizeImportStatus(value) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized) return "";
+  return ["nieaktywny", "nieaktywna", "inactive", "0", "false"].includes(normalized) ? "inactive" : "active";
+}
+
+function transliterateLogin(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[łŁ]/g, character => character === "Ł" ? "L" : "l")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]/g, "");
+}
+
+function makeUniqueImportLogin(baseLogin, usedLogins, generatedCounts) {
+  const base = transliterateLogin(baseLogin) || "User";
+  const baseKey = base.toLowerCase();
+  const nextNumber = (generatedCounts.get(baseKey) || 0) + 1;
+  generatedCounts.set(baseKey, nextNumber);
+  let candidate = nextNumber === 1 ? base : `${base}${nextNumber}`;
+  let suffix = nextNumber;
+  while (usedLogins.has(candidate.toLowerCase())) {
+    suffix += 1;
+    candidate = `${base}${suffix}`;
+  }
+  usedLogins.add(candidate.toLowerCase());
+  return candidate;
+}
+
 function getUserFullName(user) {
   return `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.displayName || user.login || "--";
 }
@@ -499,7 +693,8 @@ function formatUserRoles(roles = []) {
 
 function formatAssignments(user) {
   if (!user.roles.includes("judge")) return "—";
-  return "Brak";
+  const assignment = getActiveJudgeAssignment(user.id);
+  return assignment ? getCompetitionName(assignment.competitionId) : "Brak";
 }
 
 function openAddUserForm() {
@@ -518,6 +713,7 @@ function openAddUserForm() {
   hideUserFormError();
   hideBulkMessage();
   closePasswordForm();
+  closeImportUsersPanel();
   $("#userFormPanel").hidden = false;
   $("#userFirstNameInput").focus();
 }
@@ -540,6 +736,7 @@ function openEditUserForm(userId) {
   hideUserFormError();
   hideBulkMessage();
   closePasswordForm();
+  closeImportUsersPanel();
   $("#userFormPanel").hidden = false;
   $("#userFirstNameInput").focus();
 }
@@ -548,6 +745,213 @@ function closeUserForm() {
   ui.editingUserId = null;
   $("#userFormPanel").hidden = true;
   hideUserFormError();
+}
+
+function openImportUsersPanel() {
+  closeUserForm();
+  closePasswordForm();
+  hideBulkMessage();
+  $("#importUsersPanel").hidden = false;
+  $("#importUsersFileInput").focus();
+}
+
+function closeImportUsersPanel() {
+  const panel = $("#importUsersPanel");
+  if (!panel) return;
+  panel.hidden = true;
+  $("#importUsersFileInput").value = "";
+  ui.userImportRows = [];
+  ui.userImportFileName = "";
+  const info = $("#importUsersFileInfo");
+  info.textContent = "";
+  info.hidden = true;
+  $("#importUsersPreview").innerHTML = "";
+  $("#confirmImportUsersBtn").hidden = true;
+}
+
+function resetUsersHome() {
+  closeUserForm();
+  closePasswordForm();
+  closeImportUsersPanel();
+  closeBulkMenus();
+  hideBulkMessage();
+}
+
+function renderImportUsersFileInfo(event) {
+  const file = event.target.files?.[0];
+  const info = $("#importUsersFileInfo");
+  ui.userImportRows = [];
+  ui.userImportFileName = file?.name || "";
+  $("#importUsersPreview").innerHTML = "";
+  $("#confirmImportUsersBtn").hidden = true;
+  if (!file) {
+    info.textContent = "";
+    info.hidden = true;
+    return;
+  }
+  const sizeKb = Math.max(1, Math.round(file.size / 1024));
+  info.textContent = `Wybrano plik: ${file.name} (${sizeKb} KB). Odczytuję dane...`;
+  info.hidden = false;
+  readUserImportFile(file);
+}
+
+function readUserImportFile(file) {
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const rows = /\.xlsx$/i.test(file.name)
+        ? rowsToUserImportObjects(await parseXlsxRows(reader.result))
+        : rowsToUserImportObjects(parseCsvRows(String(reader.result || "")));
+      ui.userImportRows = buildUserImportPreview(rows);
+      renderUserImportPreview();
+    } catch (error) {
+      ui.userImportRows = [{
+        rowNumber: 1,
+        firstName: "",
+        lastName: "",
+        login: "",
+        password: "",
+        roles: [],
+        status: "active",
+        valid: false,
+        errors: [error.message]
+      }];
+      renderUserImportPreview();
+    }
+  };
+  if (/\.xlsx$/i.test(file.name)) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file, "utf-8");
+}
+
+function rowsToUserImportObjects(rows) {
+  const cleaned = rows
+    .map(row => row.map(cell => String(cell ?? "").trim()))
+    .filter(row => row.some(Boolean));
+  if (cleaned.length < 2) throw new Error("Plik nie zawiera danych użytkowników.");
+  const headers = cleaned[0].map(normalizeImportHeader);
+  const firstNameIndex = findImportColumn(headers, ["imie", "imię", "first name", "firstname"]);
+  const lastNameIndex = findImportColumn(headers, ["nazwisko", "last name", "lastname"]);
+  if (firstNameIndex === -1 || lastNameIndex === -1) throw new Error("Brakuje wymaganych kolumn: Imię oraz Nazwisko.");
+  return cleaned.slice(1).map((row, index) => ({
+    rowNumber: index + 2,
+    firstName: row[firstNameIndex] || "",
+    lastName: row[lastNameIndex] || "",
+    login: "",
+    password: "",
+    roles: ["judge"],
+    status: "active"
+  }));
+}
+
+function buildUserImportPreview(rows) {
+  const usedLogins = new Set(getDisplayUsers().map(user => user.login.toLowerCase()));
+  const generatedCounts = new Map();
+  return rows.map(row => {
+    const firstName = String(row.firstName || "").trim();
+    const lastName = String(row.lastName || "").trim();
+    const baseLogin = transliterateLogin(`${firstName}${lastName}`);
+    const login = makeUniqueImportLogin(baseLogin, usedLogins, generatedCounts);
+    const next = {
+      ...row,
+      firstName,
+      lastName,
+      login,
+      password: "",
+      roles: ["judge"],
+      status: "active"
+    };
+    return validateUserImportRow(next);
+  });
+}
+
+function validateUserImportRow(row) {
+  const errors = [];
+  if (!row.firstName) errors.push("brak imienia");
+  if (!row.lastName) errors.push("brak nazwiska");
+  if (!row.login) errors.push("brak loginu");
+  return { ...row, valid: errors.length === 0, errors };
+}
+
+function renderUserImportPreview() {
+  const rows = ui.userImportRows || [];
+  const validRows = rows.filter(row => row.valid);
+  $("#importUsersFileInfo").textContent = ui.userImportFileName
+    ? `Plik: ${ui.userImportFileName}. Wykryto ${rows.length} ${pluralizeRows(rows.length)}.`
+    : "";
+  $("#importUsersPreview").innerHTML = rows.length ? `
+    <div class="import-summary">
+      <strong>Podgląd importu sędziów</strong>
+      <span>Poprawne: ${validRows.length}</span>
+      <span>Wymagają poprawy: ${rows.length - validRows.length}</span>
+    </div>
+    <div class="table-shell teams-table-shell">
+      <table class="users-table users-import-table">
+        <thead><tr><th>Imię</th><th>Nazwisko</th><th>Login</th><th>Stan</th></tr></thead>
+        <tbody>
+          ${rows.map(row => `
+            <tr>
+              <td>${escapeHtml(row.firstName)}</td>
+              <td>${escapeHtml(row.lastName)}</td>
+              <td><strong>${escapeHtml(row.login)}</strong></td>
+              <td><span class="badge ${row.valid ? "ok" : "warn"}">${escapeHtml(row.valid ? "Gotowy" : row.errors.join(", "))}</span></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  ` : "";
+  const button = $("#confirmImportUsersBtn");
+  button.hidden = rows.length === 0;
+  button.disabled = validRows.length === 0;
+  button.textContent = `Importuj ${validRows.length} ${pluralizeJudges(validRows.length)}`;
+}
+
+function handleUserImportInput(event) {
+  const input = event.target.closest(".user-import-input");
+  if (!input) return;
+  const index = Number(input.dataset.userImportIndex);
+  const field = input.dataset.userImportField;
+  if (!ui.userImportRows[index] || !field) return;
+  if (field === "role-judge" || field === "role-admin") {
+    const role = field === "role-judge" ? "judge" : "admin";
+    const roles = new Set(ui.userImportRows[index].roles || []);
+    if (input.checked) roles.add(role);
+    else roles.delete(role);
+    ui.userImportRows[index].roles = [...roles];
+  } else if (field === "status") {
+    ui.userImportRows[index].status = input.value;
+  } else {
+    ui.userImportRows[index][field] = input.value.trim();
+  }
+  ui.userImportRows[index] = validateUserImportRow(ui.userImportRows[index]);
+  renderUserImportPreview();
+}
+
+async function importValidUsers() {
+  const rows = (ui.userImportRows || []).filter(row => row.valid);
+  if (!rows.length) return;
+  const now = new Date().toISOString();
+  for (const row of rows) {
+    const user = {
+      id: createLocalUserId(),
+      firstName: row.firstName,
+      lastName: row.lastName,
+      displayName: `${row.firstName} ${row.lastName}`,
+      login: row.login,
+      password: "",
+      roles: ["judge"],
+      status: "active",
+      deletedAt: null,
+      deletedBy: null,
+      createdAt: now,
+      updatedAt: now
+    };
+    await repository.upsertUser(user);
+    upsertAuthAccountFromUser(user);
+  }
+  ui.state = await repository.getState();
+  renderUsers();
+  closeImportUsersPanel();
 }
 
 async function saveUserFromForm(event) {
@@ -839,6 +1243,11 @@ function pluralizeUsers(count) {
   return "użytkowników";
 }
 
+function pluralizeJudges(count) {
+  if (count === 1) return "sędziego";
+  return "sędziów";
+}
+
 function showBulkMessage(message, type = "error") {
   const box = $("#bulkMessage");
   box.textContent = message;
@@ -886,6 +1295,7 @@ function openPasswordForm(userId) {
   $("#newPasswordInput").value = "";
   hidePasswordFormError();
   closeUserForm();
+  closeImportUsersPanel();
   $("#passwordPanel").hidden = false;
   $("#newPasswordInput").focus();
 }
@@ -957,6 +1367,2153 @@ function upsertAuthAccountFromUser(user) {
 
 function createLocalUserId() {
   return `user-local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function renderAdminAssignments() {
+  const container = $("#assignmentsContent");
+  if (!container || !ui.state) return;
+  if (ui.assignmentsView === "competitions") {
+    renderAssignmentsCompetitions(container);
+    return;
+  }
+  if (ui.assignmentsView === "competition-detail") {
+    renderCompetitionAssignmentDetail(container);
+    return;
+  }
+  if (ui.assignmentsView === "competition-settings") {
+    renderCompetitionSettings(container);
+    return;
+  }
+  if (ui.assignmentsView === "judges") {
+    renderAssignmentsJudges(container);
+    return;
+  }
+  if (ui.assignmentsView === "judge-detail") {
+    renderJudgeAssignmentDetail(container);
+    return;
+  }
+  renderAssignmentsHome(container);
+}
+
+function resetAssignmentsHome() {
+  ui.assignmentsView = "home";
+  ui.selectedAssignmentCompetitionId = null;
+  ui.selectedAssignmentJudgeId = null;
+  ui.checklistDraftCompetitionId = null;
+  ui.equipmentChecklistDraft = [];
+  resetCompetitionImport();
+  ui.selectedCompetitionIds.clear();
+}
+
+function renderAssignmentsHome(container) {
+  container.innerHTML = `
+    <div class="admin-section-header assignments-header">
+      <div>
+        <h2>Przydziały</h2>
+        <p class="muted">Zarządzaj przypisaniem sędziów do konkurencji.</p>
+      </div>
+    </div>
+    <div class="assignment-tiles">
+      <button type="button" class="assignment-tile" data-assignments-view="competitions">
+        <strong>KONKURENCJE</strong>
+        <span>Wybierz konkurencję i przypisz do niej sędziów.</span>
+      </button>
+      <button type="button" class="assignment-tile" data-assignments-view="judges">
+        <strong>SĘDZIOWIE</strong>
+        <span>Wybierz sędziego i przypisz go do konkurencji.</span>
+      </button>
+    </div>
+  `;
+}
+
+function renderAssignmentsCompetitions(container) {
+  const competitions = getAssignableCompetitions();
+  pruneSelectedCompetitions(competitions);
+  container.innerHTML = `
+    ${renderAssignmentsBreadcrumb("Przydziały > Konkurencje")}
+    <div class="admin-section-header assignments-header">
+      <div>
+        <h2>Konkurencje</h2>
+        <p class="muted">Wybierz konkurencję, aby zarządzać przypisanymi sędziami.</p>
+      </div>
+      <div class="admin-header-actions">
+        <label class="secondary compact-button file-button">
+          Importuj konkurencje
+          <input id="competitionImportInput" type="file" accept=".xlsx,.csv,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/json">
+        </label>
+      </div>
+    </div>
+    <div id="assignmentMessage" class="bulk-message" role="alert" hidden></div>
+    ${renderCompetitionImportPreview()}
+    ${renderCompetitionBulkActions()}
+    <div class="table-shell assignments-table-shell">
+      <table class="users-table assignments-table">
+        <thead>
+          <tr>
+            <th class="select-column">
+              <label class="select-all-label">
+                <input type="checkbox" id="selectAllCompetitions" ${areAllVisibleCompetitionsSelected(competitions) ? "checked" : ""}>
+                <span>Zaznacz wszystkie</span>
+              </label>
+            </th>
+            <th>Nr</th>
+            <th>Nazwa konkurencji</th>
+            <th>Sędziowie obecnie / min.</th>
+            <th>Zarządzaj sędziami</th>
+            <th>Zarządzaj konkurencją</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${competitions.length ? competitions.map(competition => {
+            const minJudges = getCompetitionMinJudges(competition);
+            const assignedJudges = getJudgesForCompetition(competition.id);
+            const currentJudges = assignedJudges.length;
+            return `
+              <tr data-competition-drop-id="${escapeHtml(competition.id)}">
+                <td class="select-column"><input type="checkbox" class="competition-select" data-competition-id="${escapeHtml(competition.id)}" aria-label="Zaznacz konkurencję ${escapeHtml(competition.name)}" ${ui.selectedCompetitionIds.has(competition.id) ? "checked" : ""}></td>
+                <td><strong>${escapeHtml(getCompetitionNumber(competition))}</strong></td>
+                <td>
+                  <strong>${escapeHtml(competition.name)}</strong>
+                  ${renderAssignedJudgeList(competition.id, assignedJudges)}
+                </td>
+                <td>${formatJudgeStaffing(minJudges, currentJudges)}</td>
+                <td><button type="button" class="secondary compact-button" data-assignment-action="competition-detail" data-competition-id="${escapeHtml(competition.id)}">Zarządzaj sędziami</button></td>
+                <td><button type="button" class="secondary compact-button" data-assignment-action="competition-settings" data-competition-id="${escapeHtml(competition.id)}">Zarządzaj konkurencją</button></td>
+              </tr>
+            `;
+          }).join("") : `<tr><td colspan="6">Brak konkurencji.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderAssignedJudgeList(competitionId, judges) {
+  return `
+    <div class="assigned-judge-list" data-competition-drop-id="${escapeHtml(competitionId)}">
+      ${judges.length ? judges.map(judge => `
+        <span class="assigned-judge-chip" draggable="true" data-drag-judge-id="${escapeHtml(judge.id)}" data-current-competition-id="${escapeHtml(competitionId)}" title="Przeciągnij do innej konkurencji">
+          ${escapeHtml(getUserFullName(judge))}
+        </span>
+      `).join("") : `<span class="assigned-judge-empty">Brak przypisanych sędziów</span>`}
+    </div>
+  `;
+}
+
+function renderCompetitionBulkActions() {
+  const count = ui.selectedCompetitionIds.size;
+  if (!count) return "";
+  return `
+    <div class="bulk-actions-bar">
+      <strong>Zaznaczono: ${count}</strong>
+      <div class="bulk-actions">
+        <button type="button" class="secondary compact-button danger-button" data-assignment-action="delete-competitions">Usuń</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderCompetitionImportPreview() {
+  if (!ui.competitionImportVisible) return "";
+  const rows = ui.competitionImportRows || [];
+  const validRows = rows.filter(row => row.valid);
+  return `
+    <div class="user-form-panel import-users-panel">
+      <h3>Podgląd importu konkurencji</h3>
+      <p class="muted">${ui.competitionImportFileName ? `Plik: ${escapeHtml(ui.competitionImportFileName)}.` : "Wybierz plik XLSX, CSV albo JSON z listą konkurencji."}</p>
+      ${rows.length ? `
+        <div class="table-shell assignments-table-shell">
+          <table class="users-table competition-import-table">
+            <thead><tr><th>Nr</th><th>Nazwa</th><th>Minimalna liczba sędziów</th><th>Stan importu</th></tr></thead>
+            <tbody>
+              ${rows.map(row => `
+                <tr>
+                  <td>${escapeHtml(row.competitionNumber)}</td>
+                  <td>${escapeHtml(row.name)}</td>
+                  <td>${escapeHtml(row.minJudges || "")}</td>
+                  <td><span class="badge ${row.valid ? "ok" : "warn"}">${escapeHtml(row.status)}</span></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+        <div class="action-row">
+          <button type="button" class="secondary" data-assignment-action="cancel-competition-import">Anuluj</button>
+          <button type="button" data-assignment-action="confirm-competition-import" ${validRows.length ? "" : "disabled"}>Importuj ${validRows.length} ${pluralizeCompetitions(validRows.length)}</button>
+        </div>
+      ` : `
+        <div class="import-columns">
+          <strong>Rozpoznawane nagłówki:</strong>
+          <span>Nr</span>
+          <span>Nazwa</span>
+          <span>Minimalna liczba sędziów</span>
+          <span>Numer konkurencji</span>
+          <span>Nazwa konkurencji</span>
+          <span>MinJudges</span>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function renderCompetitionAssignmentDetail(container) {
+  const competition = getCompetitionById(ui.selectedAssignmentCompetitionId);
+  if (!competition) {
+    ui.assignmentsView = "competitions";
+    renderAdminAssignments();
+    return;
+  }
+  const judges = getAssignableJudges();
+  const assignedJudgeIds = new Set(getJudgesForCompetition(competition.id).map(user => user.id));
+  container.innerHTML = `
+    ${renderAssignmentsBreadcrumb("Przydziały > Konkurencje")}
+    <div class="assignments-detail-header">
+      <div>
+        <h2>Konkurencja: ${escapeHtml(competition.name)}</h2>
+        <p class="muted">Zaznacz aktywnych sędziów przypisanych do tej konkurencji.</p>
+      </div>
+      <div class="admin-header-actions">
+        <button type="button" class="secondary compact-button" data-assignments-view="competitions">Wróć do listy</button>
+        <button type="button" class="compact-button" data-assignment-action="save-competition" data-competition-id="${escapeHtml(competition.id)}">Zapisz</button>
+      </div>
+    </div>
+    <div id="assignmentMessage" class="bulk-message" role="alert" hidden></div>
+    <div class="assignment-check-list">
+      ${judges.length ? judges.map(judge => `
+        <label class="assignment-check-row">
+          <input type="checkbox" name="competitionJudge" value="${escapeHtml(judge.id)}" ${assignedJudgeIds.has(judge.id) ? "checked" : ""}>
+          <span>
+            <strong>${escapeHtml(getUserFullName(judge))}</strong>
+            <small>${escapeHtml(judge.login)}</small>
+          </span>
+        </label>
+      `).join("") : `<div class="empty-state">Brak aktywnych użytkowników z rolą Sędzia.</div>`}
+    </div>
+    <div class="action-row">
+      <button type="button" data-assignment-action="save-competition" data-competition-id="${escapeHtml(competition.id)}">Zapisz przydziały</button>
+    </div>
+  `;
+}
+
+function renderCompetitionSettings(container) {
+  const competition = getCompetitionById(ui.selectedAssignmentCompetitionId);
+  if (!competition) {
+    ui.assignmentsView = "competitions";
+    renderAdminAssignments();
+    return;
+  }
+  ensureChecklistDraft(competition);
+  const minJudges = getCompetitionMinJudges(competition);
+  const assignedJudges = getJudgesForCompetition(competition.id);
+  container.innerHTML = `
+    ${renderAssignmentsBreadcrumb("Przydziały > Konkurencje > Zarządzaj konkurencją")}
+    <div class="assignments-detail-header">
+      <div>
+        <h2>Zarządzaj konkurencją: ${escapeHtml(competition.name)}</h2>
+        <p class="muted">Ustawienia organizacyjne konkurencji są zapisywane w centralnym modelu danych konkurencji.</p>
+      </div>
+      <button type="button" class="secondary compact-button" data-assignments-view="competitions">Wróć do listy konkurencji</button>
+    </div>
+    <div id="assignmentMessage" class="bulk-message" role="alert" hidden></div>
+    <section class="competition-settings-block">
+      <div>
+        <h3>Dane konkurencji i obsada sędziowska</h3>
+        <p class="muted">Aktualnie przypisani sędziowie: ${getJudgesForCompetition(competition.id).length}</p>
+      </div>
+      <div id="competitionSettingsError" class="login-error" role="alert" hidden></div>
+      <div class="form-grid">
+        <label>
+          Nr konkurencji
+          <input id="competitionNumberInput" value="${escapeHtml(getCompetitionNumber(competition))}" autocomplete="off">
+        </label>
+        <label>
+          Nazwa konkurencji
+          <input id="competitionNameInput" value="${escapeHtml(competition.name)}" autocomplete="off">
+        </label>
+        <label>
+          Minimalna liczba sędziów
+          <input id="minJudgesInput" type="number" min="1" step="1" value="${escapeHtml(minJudges)}">
+        </label>
+        <label>
+          Sędziowie
+          <output class="assigned-judges-output">${assignedJudges.map(judge => escapeHtml(getUserFullName(judge))).join("<br>")}</output>
+        </label>
+      </div>
+      <div class="action-row">
+        <button type="button" data-assignment-action="save-competition-settings" data-competition-id="${escapeHtml(competition.id)}">Zapisz</button>
+      </div>
+    </section>
+    <section class="competition-settings-block">
+      <div class="assignments-detail-header checklist-header">
+        <div>
+          <h3>Checklista sprzętu</h3>
+          <p class="muted">Pozycje są powiązane wyłącznie z tą konkurencją. Zapis nastąpi dopiero po kliknięciu „Zapisz checklistę”.</p>
+        </div>
+        <label class="secondary compact-button file-button">
+          Importuj checklistę
+          <input id="checklistImportInput" type="file" accept=".xlsx,.csv,.json,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/json,text/plain">
+        </label>
+      </div>
+      ${renderChecklistWorkbookImportPreview()}
+      <div id="checklistPreview" class="checklist-preview">
+        ${renderChecklistDraftItems()}
+      </div>
+      <div class="action-row">
+        <button type="button" class="secondary" data-assignment-action="add-checklist-item">Dodaj pozycję</button>
+        <button type="button" data-assignment-action="save-checklist" data-competition-id="${escapeHtml(competition.id)}">Zapisz checklistę</button>
+      </div>
+    </section>
+  `;
+}
+
+function renderChecklistDraftItems() {
+  const items = ui.equipmentChecklistDraft || [];
+  if (!items.length) {
+    return `<div class="empty-state">Brak pozycji checklisty. Zaimportuj plik albo dodaj pozycję ręcznie.</div>`;
+  }
+  return items.map((item, index) => `
+    <div class="checklist-item-row" data-checklist-index="${index}">
+      <label class="checklist-item-check">
+        <input type="checkbox" class="checklist-item-checked" data-checklist-index="${index}" ${item.checked ? "checked" : ""}>
+        <span class="sr-only">Pozycja sprawdzona</span>
+      </label>
+      ${ui.editingChecklistItemId === item.id ? `
+        <input class="checklist-item-input" value="${escapeHtml(item.label || "")}" aria-label="Treść pozycji checklisty">
+        <div class="table-actions">
+          <button type="button" class="secondary compact-button" data-assignment-action="save-checklist-item" data-checklist-index="${index}">Zapisz</button>
+          <button type="button" class="secondary compact-button" data-assignment-action="cancel-checklist-item-edit">Anuluj</button>
+        </div>
+      ` : `
+        <span class="checklist-item-label">${escapeHtml(item.label || "")}</span>
+        <div class="table-actions">
+          <button type="button" class="secondary compact-button" data-assignment-action="edit-checklist-item" data-checklist-index="${index}">Edytuj</button>
+          <button type="button" class="secondary compact-button danger-button" data-assignment-action="remove-checklist-item" data-checklist-index="${index}">Usuń</button>
+        </div>
+      `}
+    </div>
+  `).join("");
+}
+
+function renderChecklistWorkbookImportPreview() {
+  const rows = ui.checklistImportRows || [];
+  if (!rows.length) return "";
+  const validRows = rows.filter(row => row.valid && row.competitionId);
+  const competitions = getAssignableCompetitions();
+  return `
+    <div class="user-form-panel import-users-panel checklist-workbook-preview">
+      <h3>Podgląd importu checklist</h3>
+      <p class="muted">${ui.checklistImportFileName ? `Plik: ${escapeHtml(ui.checklistImportFileName)}.` : ""} Sprawdź dopasowanie arkuszy do konkurencji przed zapisem.</p>
+      <div class="table-shell assignments-table-shell">
+        <table class="users-table">
+          <thead><tr><th>Arkusz</th><th>Dopasowana konkurencja</th><th>Liczba pozycji</th><th>Status</th></tr></thead>
+          <tbody>
+            ${rows.map(row => `
+              <tr>
+                <td><strong>${escapeHtml(row.sheetName)}</strong></td>
+                <td>
+                  <select class="checklist-import-competition" data-checklist-import-id="${escapeHtml(row.id)}">
+                    <option value="">Brak dopasowania konkurencji</option>
+                    ${competitions.map(competition => `
+                      <option value="${escapeHtml(competition.id)}" ${row.competitionId === competition.id ? "selected" : ""}>${escapeHtml(competition.name)}</option>
+                    `).join("")}
+                  </select>
+                </td>
+                <td>${row.items.length}</td>
+                <td><span class="badge ${row.valid && row.competitionId ? "ok" : "warn"}">${escapeHtml(row.status)}</span></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="action-row">
+        <button type="button" class="secondary" data-assignment-action="cancel-checklist-import">Anuluj import</button>
+        <button type="button" data-assignment-action="confirm-checklist-import" ${validRows.length ? "" : "disabled"}>Importuj checklisty</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderAssignmentsJudges(container) {
+  const judges = getAssignableJudges();
+  container.innerHTML = `
+    ${renderAssignmentsBreadcrumb("Przydziały > Sędziowie")}
+    <div class="admin-section-header assignments-header">
+      <div>
+        <h2>Sędziowie</h2>
+        <p class="muted">Wybierz sędziego, aby zarządzać jego przypisaniem.</p>
+      </div>
+    </div>
+    <div id="assignmentMessage" class="bulk-message" role="alert" hidden></div>
+    <div class="table-shell assignments-table-shell">
+      <table class="users-table assignments-table">
+        <thead>
+          <tr><th>Imię i nazwisko</th><th>Login</th><th>Przypisana konkurencja</th><th>Status</th><th>Akcje</th></tr>
+        </thead>
+        <tbody>
+          ${judges.length ? judges.map(judge => {
+            const assignment = getActiveJudgeAssignment(judge.id);
+            return `
+              <tr>
+                <td><strong>${escapeHtml(getUserFullName(judge))}</strong></td>
+                <td>${escapeHtml(judge.login)}</td>
+                <td>${escapeHtml(assignment ? getCompetitionName(assignment.competitionId) : "Brak")}</td>
+                <td><span class="badge ${judge.status === "active" ? "ok" : "warn"}">${judge.status === "active" ? "Aktywny" : "Nieaktywny"}</span></td>
+                <td><button type="button" class="secondary compact-button" data-assignment-action="judge-detail" data-judge-id="${escapeHtml(judge.id)}">Zarządzaj</button></td>
+              </tr>
+            `;
+          }).join("") : `<tr><td colspan="5">Brak aktywnych użytkowników z rolą Sędzia.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderJudgeAssignmentDetail(container) {
+  const judge = getAssignableJudges().find(user => user.id === ui.selectedAssignmentJudgeId);
+  if (!judge) {
+    ui.assignmentsView = "judges";
+    renderAdminAssignments();
+    return;
+  }
+  const competitions = getAssignableCompetitions();
+  const assignment = getActiveJudgeAssignment(judge.id);
+  container.innerHTML = `
+    ${renderAssignmentsBreadcrumb("Przydziały > Sędziowie")}
+    <div class="assignments-detail-header">
+      <div>
+        <h2>Sędzia: ${escapeHtml(getUserFullName(judge))}</h2>
+        <p class="muted">Sędzia może mieć w danym momencie tylko jedną aktywną konkurencję.</p>
+      </div>
+      <div class="admin-header-actions">
+        <button type="button" class="secondary compact-button" data-assignments-view="judges">Wróć do listy</button>
+        <button type="button" class="compact-button" data-assignment-action="save-judge" data-judge-id="${escapeHtml(judge.id)}">Zapisz</button>
+      </div>
+    </div>
+    <div id="assignmentMessage" class="bulk-message" role="alert" hidden></div>
+    <div class="assignment-check-list">
+      <label class="assignment-check-row">
+        <input type="radio" name="judgeCompetition" value="" ${assignment ? "" : "checked"}>
+        <span><strong>Brak przydziału</strong></span>
+      </label>
+      ${competitions.map(competition => `
+        <label class="assignment-check-row">
+          <input type="radio" name="judgeCompetition" value="${escapeHtml(competition.id)}" ${assignment?.competitionId === competition.id ? "checked" : ""}>
+          <span><strong>${escapeHtml(competition.name)}</strong></span>
+        </label>
+      `).join("")}
+    </div>
+    <div class="action-row">
+      <button type="button" data-assignment-action="save-judge" data-judge-id="${escapeHtml(judge.id)}">Zapisz przydział</button>
+    </div>
+  `;
+}
+
+function renderAssignmentsBreadcrumb(label) {
+  return `
+    <div class="assignments-breadcrumb">
+      <button type="button" class="secondary compact-button" data-assignments-view="home">Przydziały</button>
+      <span>${escapeHtml(label)}</span>
+    </div>
+  `;
+}
+
+function handleAssignmentsClick(event) {
+  const viewButton = event.target.closest("[data-assignments-view]");
+  if (viewButton) {
+    ui.assignmentsView = viewButton.dataset.assignmentsView;
+    if (ui.assignmentsView === "home") {
+      ui.selectedAssignmentCompetitionId = null;
+      ui.selectedAssignmentJudgeId = null;
+      resetCompetitionImport();
+      ui.selectedCompetitionIds.clear();
+    }
+    renderAdminAssignments();
+    return;
+  }
+  const actionButton = event.target.closest("[data-assignment-action]");
+  if (!actionButton) return;
+  const action = actionButton.dataset.assignmentAction;
+  if (action === "competition-detail") {
+    ui.selectedAssignmentCompetitionId = actionButton.dataset.competitionId;
+    ui.assignmentsView = "competition-detail";
+    renderAdminAssignments();
+  }
+  if (action === "competition-settings") {
+    ui.selectedAssignmentCompetitionId = actionButton.dataset.competitionId;
+    ui.assignmentsView = "competition-settings";
+    resetChecklistImport();
+    resetChecklistDraft(getCompetitionById(ui.selectedAssignmentCompetitionId));
+    renderAdminAssignments();
+  }
+  if (action === "judge-detail") {
+    ui.selectedAssignmentJudgeId = actionButton.dataset.judgeId;
+    ui.assignmentsView = "judge-detail";
+    renderAdminAssignments();
+  }
+  if (action === "save-competition") {
+    saveCompetitionAssignments(actionButton.dataset.competitionId);
+  }
+  if (action === "save-judge") {
+    saveJudgeAssignment(actionButton.dataset.judgeId);
+  }
+  if (action === "save-competition-settings") {
+    saveCompetitionSettings(actionButton.dataset.competitionId);
+  }
+  if (action === "add-checklist-item") {
+    syncChecklistDraftFromInputs();
+    const item = createChecklistItem("");
+    ui.equipmentChecklistDraft.push(item);
+    ui.editingChecklistItemId = item.id;
+    renderAdminAssignments();
+  }
+  if (action === "edit-checklist-item") {
+    syncChecklistDraftFromInputs();
+    const item = ui.equipmentChecklistDraft[Number(actionButton.dataset.checklistIndex)];
+    ui.editingChecklistItemId = item?.id || null;
+    renderAdminAssignments();
+  }
+  if (action === "save-checklist-item") {
+    syncChecklistDraftFromInputs();
+    ui.editingChecklistItemId = null;
+    renderAdminAssignments();
+  }
+  if (action === "cancel-checklist-item-edit") {
+    ui.editingChecklistItemId = null;
+    renderAdminAssignments();
+  }
+  if (action === "remove-checklist-item") {
+    syncChecklistDraftFromInputs();
+    ui.equipmentChecklistDraft.splice(Number(actionButton.dataset.checklistIndex), 1);
+    ui.editingChecklistItemId = null;
+    renderAdminAssignments();
+  }
+  if (action === "save-checklist") {
+    saveCompetitionChecklist(actionButton.dataset.competitionId);
+  }
+  if (action === "confirm-checklist-import") {
+    importChecklistWorkbook();
+  }
+  if (action === "cancel-checklist-import") {
+    resetChecklistImport();
+    renderAdminAssignments();
+  }
+  if (action === "cancel-competition-import") {
+    resetCompetitionImport();
+    renderAdminAssignments();
+  }
+  if (action === "confirm-competition-import") {
+    importValidCompetitions();
+  }
+  if (action === "delete-competitions") {
+    requestBulkDeleteCompetitions();
+  }
+}
+
+function handleAssignmentsChange(event) {
+  if (event.target.id === "checklistImportInput") {
+    readChecklistImportFile(event.target.files?.[0]);
+  }
+  if (event.target.matches(".checklist-import-competition")) {
+    updateChecklistImportCompetition(event.target.dataset.checklistImportId, event.target.value);
+  }
+  if (event.target.matches(".checklist-item-checked")) {
+    updateChecklistItemChecked(Number(event.target.dataset.checklistIndex), event.target.checked);
+  }
+  if (event.target.id === "competitionImportInput") {
+    readCompetitionImportFile(event.target.files?.[0]);
+  }
+  if (event.target.id === "selectAllCompetitions") {
+    toggleAllVisibleCompetitions(event.target.checked);
+  }
+  if (event.target.matches(".competition-select")) {
+    toggleCompetitionSelection(event.target.dataset.competitionId, event.target.checked);
+  }
+}
+
+async function saveCompetitionSettings(competitionId) {
+  const competition = getCompetitionById(competitionId);
+  if (!competition) return;
+  const competitionNumber = $("#competitionNumberInput")?.value.trim() || "";
+  const name = $("#competitionNameInput")?.value.trim() || "";
+  const value = Number.parseInt($("#minJudgesInput")?.value, 10);
+  if (!competitionNumber) {
+    showCompetitionSettingsError("Nr konkurencji jest wymagany.");
+    return;
+  }
+  if (!name) {
+    showCompetitionSettingsError("Nazwa konkurencji jest wymagana.");
+    return;
+  }
+  if (!Number.isInteger(value) || value < 1) {
+    showCompetitionSettingsError("Minimalna liczba sędziów musi być liczbą całkowitą większą lub równą 1.");
+    return;
+  }
+  const duplicate = getAssignableCompetitions().find(item =>
+    item.id !== competition.id &&
+    String(getCompetitionNumber(item)).toLowerCase() === competitionNumber.toLowerCase()
+  );
+  if (duplicate) {
+    showCompetitionSettingsError("Ten numer konkurencji jest już używany.");
+    return;
+  }
+  await saveCompetition({
+    ...competition,
+    competitionNumber,
+    name,
+    minJudges: value
+  });
+  renderAdminAssignments();
+  showAssignmentMessage("Dane konkurencji zostały zapisane.", "ok");
+}
+
+async function saveCompetitionChecklist(competitionId) {
+  const competition = getCompetitionById(competitionId);
+  if (!competition) return;
+  syncChecklistDraftFromInputs();
+  const checklist = ui.equipmentChecklistDraft
+    .map((item, index) => ({
+      id: item.id || createChecklistItemId(index),
+      label: String(item.label || "").trim(),
+      checked: Boolean(item.checked)
+    }))
+    .filter(item => item.label);
+  await saveCompetition({
+    ...competition,
+    equipmentChecklist: checklist
+  });
+  resetChecklistDraft(getCompetitionById(competitionId));
+  renderAdminAssignments();
+  showAssignmentMessage("Checklista sprzętu została zapisana.", "ok");
+}
+
+async function saveCompetition(competition) {
+  await repository.upsertCompetition({
+    ...competition,
+    minJudges: getCompetitionMinJudges(competition),
+    equipmentChecklist: normalizeEquipmentChecklist(competition.equipmentChecklist),
+    updatedAt: new Date().toISOString()
+  });
+  ui.state = await repository.getState();
+  renderUsers();
+}
+
+function readChecklistImportFile(file) {
+  resetChecklistImport();
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      if (/\.xlsx$/i.test(file.name)) {
+        ui.checklistImportFileName = file.name;
+        ui.checklistImportRows = await parseChecklistWorkbook(reader.result);
+        renderAdminAssignments();
+        showAssignmentMessage(`Odczytano ${ui.checklistImportRows.length} ${pluralizeSheets(ui.checklistImportRows.length)} z pliku XLSX. Sprawdź podgląd i kliknij „Importuj checklisty”.`, "ok");
+        return;
+      }
+      ui.equipmentChecklistDraft = parseChecklistImport(String(reader.result || ""), file.name);
+      renderAdminAssignments();
+      showAssignmentMessage(`Zaimportowano ${ui.equipmentChecklistDraft.length} ${pluralizeChecklistItems(ui.equipmentChecklistDraft.length)} do podglądu. Kliknij „Zapisz checklistę”, aby zatwierdzić.`, "ok");
+    } catch (error) {
+      showAssignmentMessage(error.message);
+    }
+  };
+  if (/\.xlsx$/i.test(file.name)) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file, "utf-8");
+}
+
+function parseChecklistImport(text, fileName = "") {
+  if (/\.json$/i.test(fileName)) return parseChecklistJson(text);
+  return parseChecklistText(text);
+}
+
+function parseChecklistJson(text) {
+  const parsed = JSON.parse(text);
+  const source = Array.isArray(parsed) ? parsed : parsed.equipmentChecklist || parsed.items;
+  if (!Array.isArray(source)) throw new Error("Plik JSON powinien zawierać tablicę pozycji albo pole equipmentChecklist.");
+  return normalizeEquipmentChecklist(source);
+}
+
+function parseChecklistText(text) {
+  const rows = parseCsvRows(text)
+    .map(row => row.map(cell => String(cell || "").trim()))
+    .filter(row => row.some(Boolean));
+  if (!rows.length) throw new Error("Plik nie zawiera pozycji checklisty.");
+  const firstRow = rows[0].map(normalizeImportHeader);
+  const checklistHeaders = ["label", "nazwa", "pozycja", "sprzet"];
+  const hasHeader = firstRow.some(header => checklistHeaders.includes(header));
+  const labelIndex = hasHeader ? Math.max(0, firstRow.findIndex(header => checklistHeaders.includes(header))) : 0;
+  const dataRows = hasHeader ? rows.slice(1) : rows;
+  const items = dataRows
+    .map((row, index) => createChecklistItem(row[labelIndex] || row.find(Boolean) || "", index))
+    .filter(item => item.label);
+  if (!items.length) throw new Error("Nie znaleziono poprawnych pozycji checklisty.");
+  return items;
+}
+
+async function parseChecklistWorkbook(arrayBuffer) {
+  const sheets = await parseXlsxWorkbookSheets(arrayBuffer);
+  if (!sheets.length) throw new Error("Plik XLSX nie zawiera arkuszy.");
+  return sheets.map((sheet, index) => {
+    const items = extractChecklistItemsFromRows(sheet.rows);
+    const match = findCompetitionByNormalizedName(sheet.name);
+    return {
+      id: `checklist-sheet-${index}-${Date.now().toString(36)}`,
+      sheetName: sheet.name,
+      competitionId: match?.id || "",
+      items,
+      valid: items.length > 0,
+      status: buildChecklistImportStatus({ items, competition: match })
+    };
+  });
+}
+
+function extractChecklistItemsFromRows(rows) {
+  const labels = [];
+  for (const row of rows || []) {
+    for (const cell of row || []) {
+      const label = String(cell || "").trim();
+      if (label) labels.push(label);
+    }
+  }
+  return labels.map((label, index) => createChecklistItem(label, index));
+}
+
+function findCompetitionByNormalizedName(name) {
+  const normalized = normalizeChecklistMatchName(name);
+  const matches = getAssignableCompetitions().filter(competition => normalizeChecklistMatchName(competition.name) === normalized);
+  return matches.length === 1 ? matches[0] : null;
+}
+
+function normalizeChecklistMatchName(value) {
+  return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function buildChecklistImportStatus({ items, competition }) {
+  if (!items.length && !competition) return "Brak pozycji i brak dopasowania";
+  if (!items.length) return "Brak pozycji";
+  if (!competition) return "Brak dopasowania";
+  return "Znaleziono konkurencję";
+}
+
+function updateChecklistImportCompetition(rowId, competitionId) {
+  ui.checklistImportRows = (ui.checklistImportRows || []).map(row => {
+    if (row.id !== rowId) return row;
+    const competition = getCompetitionById(competitionId);
+    return {
+      ...row,
+      competitionId: competition?.id || "",
+      status: buildChecklistImportStatus({ items: row.items, competition })
+    };
+  });
+  renderAdminAssignments();
+}
+
+async function importChecklistWorkbook() {
+  const rows = (ui.checklistImportRows || []).filter(row => row.valid && row.competitionId);
+  if (!rows.length) {
+    showAssignmentMessage("Brak poprawnie dopasowanych checklist do importu.");
+    return;
+  }
+  for (const row of rows) {
+    const competition = getCompetitionById(row.competitionId);
+    if (!competition) continue;
+    await saveCompetition({
+      ...competition,
+      equipmentChecklist: row.items
+    });
+  }
+  ui.state = await repository.getState();
+  resetChecklistImport();
+  resetChecklistDraft(getCompetitionById(ui.selectedAssignmentCompetitionId));
+  renderAdminAssignments();
+  showAssignmentMessage(`Zaimportowano ${rows.length} ${pluralizeSheets(rows.length)} checklist.`, "ok");
+}
+
+function resetChecklistImport() {
+  ui.checklistImportRows = [];
+  ui.checklistImportFileName = "";
+}
+
+function syncChecklistDraftFromInputs() {
+  document.querySelectorAll(".checklist-item-row").forEach(row => {
+    const index = Number(row.dataset.checklistIndex);
+    const item = ui.equipmentChecklistDraft[index];
+    if (!item) return;
+    const input = row.querySelector(".checklist-item-input");
+    const checked = row.querySelector(".checklist-item-checked");
+    if (input) item.label = input.value.trim();
+    if (checked) item.checked = checked.checked;
+  });
+}
+
+function updateChecklistItemChecked(index, checked) {
+  const item = ui.equipmentChecklistDraft[index];
+  if (!item) return;
+  item.checked = checked;
+}
+
+function showCompetitionSettingsError(message) {
+  const box = $("#competitionSettingsError");
+  if (!box) return;
+  box.textContent = message;
+  box.hidden = false;
+}
+
+function readCompetitionImportFile(file) {
+  ui.competitionImportRows = [];
+  ui.competitionImportFileName = file?.name || "";
+  ui.competitionImportVisible = true;
+  if (!file) {
+    renderAdminAssignments();
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const rows = /\.xlsx$/i.test(file.name)
+        ? await parseCompetitionXlsx(reader.result)
+        : parseCompetitionImportText(String(reader.result || ""), file.name);
+      ui.competitionImportRows = buildCompetitionImportPreview(rows);
+    } catch (error) {
+      ui.competitionImportRows = [{
+        competitionNumber: "",
+        name: "",
+        minJudges: "",
+        valid: false,
+        status: `Błąd – ${error.message}`
+      }];
+    }
+    renderAdminAssignments();
+  };
+  if (/\.xlsx$/i.test(file.name)) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file, "utf-8");
+}
+
+function parseCompetitionImportText(text, fileName = "") {
+  if (/\.json$/i.test(fileName)) {
+    const parsed = JSON.parse(text);
+    const rows = Array.isArray(parsed) ? parsed : parsed.competitions || parsed.items;
+    if (!Array.isArray(rows)) throw new Error("plik JSON powinien zawierać tablicę konkurencji");
+    return rows.map(row => ({
+      competitionNumber: row.competitionNumber ?? row.number ?? row.nr ?? row.Nr ?? "",
+      name: row.name ?? row.nazwa ?? row.Nazwa ?? "",
+      minJudges: row.minJudges ?? row["Minimalna liczba sędziów"] ?? row.minimalJudges ?? ""
+    }));
+  }
+  return rowsToCompetitionObjects(parseCsvRows(text));
+}
+
+function rowsToCompetitionObjects(rows) {
+  const cleaned = rows
+    .map(row => row.map(cell => String(cell ?? "").trim()))
+    .filter(row => row.some(Boolean));
+  if (cleaned.length < 2) throw new Error("plik nie zawiera danych konkurencji");
+  const headers = cleaned[0].map(normalizeImportHeader);
+  const numberIndex = findImportColumn(headers, ["nr", "numer konkurencji", "competitionnumber", "competition number"]);
+  const nameIndex = findImportColumn(headers, ["nazwa", "nazwa konkurencji", "name"]);
+  const minIndex = findImportColumn(headers, ["minimalna liczba sedziow", "minjudges", "min judges"]);
+  if (numberIndex === -1 || nameIndex === -1) {
+    throw new Error("brakuje wymaganych kolumn Nr/Nazwa");
+  }
+  return cleaned.slice(1).map(row => ({
+    competitionNumber: row[numberIndex] || "",
+    name: row[nameIndex] || "",
+    minJudges: minIndex === -1 ? "" : row[minIndex] || ""
+  }));
+}
+
+function buildCompetitionImportPreview(rows) {
+  const existingNumbers = new Set(getAssignableCompetitions().map(item => String(getCompetitionNumber(item)).trim().toLowerCase()).filter(Boolean));
+  const counts = new Map();
+  for (const row of rows) {
+    const key = String(row.competitionNumber || "").trim().toLowerCase();
+    if (key) counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return rows.map(row => {
+    const competitionNumber = String(row.competitionNumber || "").trim();
+    const name = String(row.name || "").trim();
+    const minJudgesValue = Number.parseInt(row.minJudges, 10);
+    const minJudges = Number.isInteger(minJudgesValue) && minJudgesValue >= 1 ? minJudgesValue : 1;
+    const key = competitionNumber.toLowerCase();
+    let status = "Gotowy";
+    if (!competitionNumber) status = "Błąd – brak numeru";
+    else if (!name) status = "Błąd – brak nazwy";
+    else if (existingNumbers.has(key)) status = "Błąd – numer już istnieje";
+    else if (counts.get(key) > 1) status = "Błąd – duplikat w pliku";
+    return {
+      competitionNumber,
+      name,
+      minJudges,
+      valid: status === "Gotowy",
+      status
+    };
+  });
+}
+
+async function parseCompetitionXlsx(arrayBuffer) {
+  return rowsToCompetitionObjects(await parseXlsxRows(arrayBuffer));
+}
+
+async function parseXlsxRows(arrayBuffer) {
+  const entries = await readXlsxZipEntries(arrayBuffer);
+  const workbookXml = entries.get("xl/workbook.xml");
+  const workbookRelsXml = entries.get("xl/_rels/workbook.xml.rels");
+  if (!workbookXml || !workbookRelsXml) throw new Error("nie można odczytać skoroszytu XLSX");
+  const sharedStrings = parseSharedStrings(entries.get("xl/sharedStrings.xml") || "");
+  const sheetPath = getFirstWorksheetPath(workbookXml, workbookRelsXml);
+  const sheetXml = entries.get(sheetPath);
+  if (!sheetXml) throw new Error("nie można odczytać pierwszego arkusza XLSX");
+  return parseWorksheetRows(sheetXml, sharedStrings);
+}
+
+async function parseXlsxWorkbookSheets(arrayBuffer) {
+  const entries = await readXlsxZipEntries(arrayBuffer);
+  const workbookXml = entries.get("xl/workbook.xml");
+  const workbookRelsXml = entries.get("xl/_rels/workbook.xml.rels");
+  if (!workbookXml || !workbookRelsXml) throw new Error("nie można odczytać skoroszytu XLSX");
+  const sharedStrings = parseSharedStrings(entries.get("xl/sharedStrings.xml") || "");
+  const sheetRefs = getWorkbookWorksheetRefs(workbookXml, workbookRelsXml);
+  return sheetRefs.map(sheet => {
+    const sheetXml = entries.get(sheet.path) || entries.get(`xl/${sheet.path}`);
+    if (!sheetXml) return { name: sheet.name, rows: [] };
+    return { name: sheet.name, rows: parseWorksheetRows(sheetXml, sharedStrings) };
+  });
+}
+
+async function readXlsxZipEntries(arrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+  const entries = new Map();
+  let offset = findEndOfCentralDirectory(bytes);
+  if (offset === -1) throw new Error("nieprawidłowy plik XLSX");
+  const centralDirectoryOffset = readUint32(bytes, offset + 16);
+  let entryOffset = centralDirectoryOffset;
+  while (entryOffset < bytes.length - 4 && readUint32(bytes, entryOffset) === 0x02014b50) {
+    const compression = readUint16(bytes, entryOffset + 10);
+    const compressedSize = readUint32(bytes, entryOffset + 20);
+    const fileNameLength = readUint16(bytes, entryOffset + 28);
+    const extraLength = readUint16(bytes, entryOffset + 30);
+    const commentLength = readUint16(bytes, entryOffset + 32);
+    const localHeaderOffset = readUint32(bytes, entryOffset + 42);
+    const nameStart = entryOffset + 46;
+    const fileName = decodeUtf8(bytes.slice(nameStart, nameStart + fileNameLength));
+    const localFileNameLength = readUint16(bytes, localHeaderOffset + 26);
+    const localExtraLength = readUint16(bytes, localHeaderOffset + 28);
+    const dataStart = localHeaderOffset + 30 + localFileNameLength + localExtraLength;
+    const data = bytes.slice(dataStart, dataStart + compressedSize);
+    if (!fileName.endsWith("/")) {
+      const content = compression === 0
+        ? decodeUtf8(data)
+        : compression === 8
+          ? await inflateRawToText(data)
+          : null;
+      if (content != null) entries.set(fileName.replace(/\\/g, "/"), content);
+    }
+    entryOffset = nameStart + fileNameLength + extraLength + commentLength;
+  }
+  return entries;
+}
+
+function findEndOfCentralDirectory(bytes) {
+  for (let offset = bytes.length - 22; offset >= 0; offset -= 1) {
+    if (readUint32(bytes, offset) === 0x06054b50) return offset;
+  }
+  return -1;
+}
+
+async function inflateRawToText(data) {
+  if (!("DecompressionStream" in window)) {
+    throw new Error("przeglądarka nie obsługuje lokalnego odczytu XLSX");
+  }
+  try {
+    const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return await new Response(stream).text();
+  } catch {
+    const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate"));
+    return await new Response(stream).text();
+  }
+}
+
+function getFirstWorksheetPath(workbookXml, relsXml) {
+  const workbook = new DOMParser().parseFromString(workbookXml, "application/xml");
+  const rels = new DOMParser().parseFromString(relsXml, "application/xml");
+  const firstSheet = workbook.querySelector("sheet");
+  const relId = firstSheet?.getAttribute("r:id") || firstSheet?.getAttribute("id");
+  const rel = [...rels.querySelectorAll("Relationship")].find(item => item.getAttribute("Id") === relId)
+    || [...rels.querySelectorAll("Relationship")].find(item => item.getAttribute("Type")?.includes("/worksheet"));
+  const target = rel?.getAttribute("Target");
+  if (!target) throw new Error("brak arkusza w pliku XLSX");
+  return target.startsWith("xl/") ? target : `xl/${target.replace(/^\/?xl\//, "")}`.replace(/\/\.\//g, "/");
+}
+
+function getWorkbookWorksheetRefs(workbookXml, relsXml) {
+  const workbook = new DOMParser().parseFromString(workbookXml, "application/xml");
+  const rels = new DOMParser().parseFromString(relsXml, "application/xml");
+  const relById = new Map([...rels.querySelectorAll("Relationship")].map(rel => [rel.getAttribute("Id"), rel]));
+  return [...workbook.querySelectorAll("sheet")]
+    .map((sheet, index) => {
+      const relId = sheet.getAttribute("r:id") || sheet.getAttribute("id");
+      const rel = relById.get(relId);
+      const target = rel?.getAttribute("Target");
+      return {
+        name: sheet.getAttribute("name") || `Arkusz ${index + 1}`,
+        path: target ? resolveWorksheetPath(target) : ""
+      };
+    })
+    .filter(sheet => sheet.path);
+}
+
+function resolveWorksheetPath(target) {
+  const rawPath = target.startsWith("/")
+    ? target.slice(1)
+    : target.startsWith("xl/")
+      ? target
+      : `xl/${target.replace(/^\/?xl\//, "")}`;
+  const parts = [];
+  for (const part of rawPath.split("/")) {
+    if (!part || part === ".") continue;
+    if (part === "..") parts.pop();
+    else parts.push(part);
+  }
+  return parts.join("/");
+}
+
+function parseSharedStrings(xml) {
+  if (!xml) return [];
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  return [...doc.querySelectorAll("si")].map(si => [...si.querySelectorAll("t")].map(t => t.textContent || "").join(""));
+}
+
+function parseWorksheetRows(xml, sharedStrings) {
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  return [...doc.querySelectorAll("sheetData row")].map(row => {
+    const cells = [];
+    for (const cell of [...row.querySelectorAll("c")]) {
+      const ref = cell.getAttribute("r") || "";
+      const columnIndex = columnNameToIndex(ref.replace(/[0-9]/g, ""));
+      cells[columnIndex] = getWorksheetCellValue(cell, sharedStrings);
+    }
+    return cells.map(value => value || "");
+  });
+}
+
+function getWorksheetCellValue(cell, sharedStrings) {
+  const type = cell.getAttribute("t");
+  const value = cell.querySelector("v")?.textContent || "";
+  if (type === "s") return sharedStrings[Number(value)] || "";
+  if (type === "inlineStr") return [...cell.querySelectorAll("t")].map(node => node.textContent || "").join("");
+  if (type === "str") return value || cell.querySelector("f")?.textContent || "";
+  if (type === "b") return value === "1" ? "TAK" : "";
+  return value;
+}
+
+function columnNameToIndex(name) {
+  let index = 0;
+  for (const char of name) index = index * 26 + (char.toUpperCase().charCodeAt(0) - 64);
+  return Math.max(0, index - 1);
+}
+
+function readUint16(bytes, offset) {
+  return bytes[offset] | (bytes[offset + 1] << 8);
+}
+
+function readUint32(bytes, offset) {
+  return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
+}
+
+function decodeUtf8(bytes) {
+  return new TextDecoder("utf-8").decode(bytes);
+}
+
+async function importValidCompetitions() {
+  const rows = (ui.competitionImportRows || []).filter(row => row.valid);
+  if (!rows.length) return;
+  const now = new Date().toISOString();
+  for (const row of rows) {
+    await repository.upsertCompetition({
+      id: createLocalCompetitionId(row),
+      eventId: getDefaultEventId(),
+      competitionNumber: row.competitionNumber,
+      name: row.name,
+      code: createCompetitionCode(row.name, row.competitionNumber),
+      minJudges: row.minJudges,
+      equipmentChecklist: [],
+      parts: [],
+      deletedAt: null,
+      deletedBy: null,
+      createdAt: now,
+      updatedAt: now
+    });
+  }
+  ui.state = await repository.getState();
+  resetCompetitionImport();
+  renderAdminAssignments();
+}
+
+function requestBulkDeleteCompetitions() {
+  const competitions = getSelectedCompetitions();
+  if (!competitions.length) return;
+  const assigned = competitions.filter(competition => getJudgesForCompetition(competition.id).length > 0);
+  const warning = assigned.length
+    ? `\n\nUwaga: ${assigned.length} ${pluralizeCompetitions(assigned.length)} ma aktywnie przypisanych sędziów. Po potwierdzeniu konkurencje oraz ich aktywne przydziały zostaną oznaczone jako usunięte.`
+    : "";
+  showConfirmDialog({
+    title: "Usuń konkurencje",
+    message: `Czy na pewno chcesz usunąć ${competitions.length} ${pluralizeCompetitions(competitions.length)}?${warning}`,
+    confirmLabel: `Usuń ${competitions.length} ${pluralizeCompetitions(competitions.length)}`,
+    onConfirm: () => softDeleteCompetitions(competitions)
+  });
+}
+
+async function softDeleteCompetitions(competitions) {
+  const now = new Date().toISOString();
+  const ids = new Set(competitions.map(competition => competition.id));
+  for (const competition of competitions) {
+    await repository.upsertCompetition({
+      ...competition,
+      deletedAt: now,
+      deletedBy: getUserId(),
+      updatedAt: now
+    });
+  }
+  for (const assignment of getActiveJudgeAssignments().filter(item => ids.has(item.competitionId))) {
+    await repository.upsertDeviceAssignment({
+      ...assignment,
+      deletedAt: now,
+      deletedBy: getUserId(),
+      updatedAt: now
+    });
+  }
+  for (const id of ids) ui.selectedCompetitionIds.delete(id);
+  ui.state = await repository.getState();
+  renderAdminAssignments();
+  renderUsers();
+}
+
+async function saveCompetitionAssignments(competitionId) {
+  const competition = getCompetitionById(competitionId);
+  if (!competition) return;
+  const selectedJudgeIds = [...document.querySelectorAll("input[name='competitionJudge']:checked")].map(input => input.value);
+  const judges = getAssignableJudges();
+  const selectedSet = new Set(selectedJudgeIds);
+  const currentCompetitionJudgeIds = new Set(getJudgesForCompetition(competitionId).map(user => user.id));
+  const conflicts = judges.filter(judge => {
+    const assignment = getActiveJudgeAssignment(judge.id);
+    return selectedSet.has(judge.id) && assignment && assignment.competitionId !== competitionId;
+  });
+  const apply = async () => {
+    try {
+      for (const judge of judges) {
+        const isSelected = selectedSet.has(judge.id);
+        const isCurrentlyHere = currentCompetitionJudgeIds.has(judge.id);
+        if (isSelected) await assignJudgeToCompetition(judge.id, competitionId);
+        if (!isSelected && isCurrentlyHere) await clearJudgeAssignment(judge.id);
+      }
+      ui.state = await repository.getState();
+      ui.assignmentsView = "competitions";
+      ui.selectedAssignmentCompetitionId = null;
+      renderAdminAssignments();
+      renderUsers();
+      showAssignmentMessage("Przydział zapisany", "ok");
+    } catch (error) {
+      showAssignmentMessage(`Nie udało się zapisać przydziału: ${error.message}`);
+    }
+  };
+  if (conflicts.length) {
+    showConfirmDialog({
+      title: "Zmień przydział",
+      message: buildAssignmentConflictMessage(conflicts, competition.name),
+      confirmLabel: "Zmień przydział",
+      onConfirm: apply
+    });
+    return;
+  }
+  await apply();
+}
+
+async function saveJudgeAssignment(judgeId) {
+  const judge = getAssignableJudges().find(user => user.id === judgeId);
+  if (!judge) return;
+  const selectedCompetitionId = document.querySelector("input[name='judgeCompetition']:checked")?.value || "";
+  const currentAssignment = getActiveJudgeAssignment(judge.id);
+  const apply = async () => {
+    try {
+      if (selectedCompetitionId) await assignJudgeToCompetition(judge.id, selectedCompetitionId);
+      else await clearJudgeAssignment(judge.id);
+      ui.state = await repository.getState();
+      ui.assignmentsView = "judges";
+      ui.selectedAssignmentJudgeId = null;
+      renderAdminAssignments();
+      renderUsers();
+      showAssignmentMessage("Przydział zapisany", "ok");
+    } catch (error) {
+      showAssignmentMessage(`Nie udało się zapisać przydziału: ${error.message}`);
+    }
+  };
+  if (selectedCompetitionId && currentAssignment && currentAssignment.competitionId !== selectedCompetitionId) {
+    showConfirmDialog({
+      title: "Zmień przydział",
+      message: `${getUserFullName(judge)} jest obecnie przypisany do konkurencji ${getCompetitionName(currentAssignment.competitionId)}.\nCzy chcesz zmienić jego przydział na ${getCompetitionName(selectedCompetitionId)}?`,
+      confirmLabel: "Zmień przydział",
+      onConfirm: apply
+    });
+    return;
+  }
+  await apply();
+}
+
+async function assignJudgeToCompetition(judgeId, competitionId) {
+  const now = new Date().toISOString();
+  const existingAssignments = getActiveAssignmentsForJudge(judgeId);
+  for (const assignment of existingAssignments) {
+    if (assignment.competitionId !== competitionId) {
+      await repository.upsertDeviceAssignment({ ...assignment, deletedAt: now, deletedBy: getUserId(), updatedAt: now });
+    }
+  }
+  const current = existingAssignments.find(assignment => assignment.competitionId === competitionId);
+  await repository.upsertDeviceAssignment({
+    ...(current || {}),
+    id: current?.id || createJudgeAssignmentId(judgeId, competitionId),
+    deviceId: current?.deviceId || null,
+    judgeUserId: judgeId,
+    competitionId,
+    competitionPartId: null,
+    deletedAt: null,
+    deletedBy: null,
+    updatedAt: now,
+    createdAt: current?.createdAt || now
+  });
+}
+
+function handleAssignmentDragStart(event) {
+  const chip = event.target.closest("[data-drag-judge-id]");
+  if (!chip) return;
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", JSON.stringify({
+    judgeId: chip.dataset.dragJudgeId,
+    fromCompetitionId: chip.dataset.currentCompetitionId
+  }));
+  chip.classList.add("dragging");
+}
+
+function handleAssignmentDragOver(event) {
+  const target = event.target.closest("[data-competition-drop-id]");
+  if (!target) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+  document.querySelectorAll(".assignment-drop-over").forEach(item => item.classList.remove("assignment-drop-over"));
+  target.classList.add("assignment-drop-over");
+}
+
+function handleAssignmentDragLeave(event) {
+  const target = event.target.closest("[data-competition-drop-id]");
+  if (!target) return;
+  const nextTarget = event.relatedTarget;
+  if (nextTarget && target.contains(nextTarget)) return;
+  target.classList.remove("assignment-drop-over");
+}
+
+async function handleAssignmentDrop(event) {
+  const target = event.target.closest("[data-competition-drop-id]");
+  if (!target) return;
+  event.preventDefault();
+  clearAssignmentDragState();
+  let payload = null;
+  try {
+    payload = JSON.parse(event.dataTransfer.getData("text/plain") || "{}");
+  } catch {
+    payload = null;
+  }
+  const judgeId = payload?.judgeId;
+  const fromCompetitionId = payload?.fromCompetitionId;
+  const toCompetitionId = target.dataset.competitionDropId;
+  if (!judgeId || !toCompetitionId || fromCompetitionId === toCompetitionId) return;
+  const judge = getAssignableJudges().find(user => user.id === judgeId);
+  const fromName = getCompetitionName(fromCompetitionId);
+  const toName = getCompetitionName(toCompetitionId);
+  await assignJudgeToCompetition(judgeId, toCompetitionId);
+  ui.state = await repository.getState();
+  renderAdminAssignments();
+  renderUsers();
+  showAssignmentMessage(`${getUserFullName(judge)} przeniesiony:\n${fromName} → ${toName}`, "ok");
+}
+
+function clearAssignmentDragState() {
+  document.querySelectorAll(".assignment-drop-over").forEach(item => item.classList.remove("assignment-drop-over"));
+  document.querySelectorAll(".assigned-judge-chip.dragging").forEach(item => item.classList.remove("dragging"));
+}
+
+async function clearJudgeAssignment(judgeId) {
+  const now = new Date().toISOString();
+  for (const assignment of getActiveAssignmentsForJudge(judgeId)) {
+    await repository.upsertDeviceAssignment({ ...assignment, deletedAt: now, deletedBy: getUserId(), updatedAt: now });
+  }
+}
+
+function getCompetitionMinJudges(competition) {
+  const value = Number.parseInt(competition?.minJudges, 10);
+  return Number.isInteger(value) && value >= 1 ? value : 1;
+}
+
+function formatJudgeStaffing(minJudges, currentJudges) {
+  if (currentJudges < minJudges) {
+    return `<span class="badge staffing-badge shortage">${currentJudges} / ${minJudges} · brakuje ${minJudges - currentJudges}</span>`;
+  }
+  if (currentJudges > minJudges) {
+    return `<span class="badge staffing-badge overstaffed"><span aria-hidden="true">⚠ !</span> ${currentJudges} / ${minJudges} · +${currentJudges - minJudges}</span>`;
+  }
+  return `<span class="badge staffing-badge ok">${currentJudges} / ${minJudges} · obsada kompletna</span>`;
+}
+
+function ensureChecklistDraft(competition) {
+  if (ui.checklistDraftCompetitionId === competition.id) return;
+  resetChecklistDraft(competition);
+}
+
+function resetChecklistDraft(competition) {
+  ui.checklistDraftCompetitionId = competition?.id || null;
+  ui.equipmentChecklistDraft = normalizeEquipmentChecklist(competition?.equipmentChecklist || []);
+}
+
+function normalizeEquipmentChecklist(items = []) {
+  return (Array.isArray(items) ? items : [])
+    .map((item, index) => createChecklistItem(typeof item === "string" ? item : item?.label, index, item?.id, Boolean(item?.checked)))
+    .filter(item => item.label);
+}
+
+function createChecklistItem(label = "", index = 0, id = null, checked = false) {
+  return {
+    id: id || createChecklistItemId(index),
+    label: String(label || "").trim(),
+    checked
+  };
+}
+
+function createChecklistItemId(index = 0) {
+  return `item-${Date.now().toString(36)}-${index}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function pluralizeChecklistItems(count) {
+  if (count === 1) return "pozycję";
+  if (count >= 2 && count <= 4) return "pozycje";
+  return "pozycji";
+}
+
+function pluralizeSheets(count) {
+  if (count === 1) return "arkusz";
+  if (count >= 2 && count <= 4) return "arkusze";
+  return "arkuszy";
+}
+
+function getCompetitionNumber(competition) {
+  return competition?.competitionNumber ?? competition?.number ?? competition?.rankingOrder ?? "";
+}
+
+function toggleCompetitionSelection(competitionId, checked) {
+  if (checked) ui.selectedCompetitionIds.add(competitionId);
+  else ui.selectedCompetitionIds.delete(competitionId);
+  renderAdminAssignments();
+}
+
+function toggleAllVisibleCompetitions(checked) {
+  const competitions = getAssignableCompetitions();
+  if (checked) competitions.forEach(competition => ui.selectedCompetitionIds.add(competition.id));
+  else competitions.forEach(competition => ui.selectedCompetitionIds.delete(competition.id));
+  renderAdminAssignments();
+}
+
+function areAllVisibleCompetitionsSelected(competitions) {
+  return competitions.length > 0 && competitions.every(competition => ui.selectedCompetitionIds.has(competition.id));
+}
+
+function pruneSelectedCompetitions(competitions) {
+  const visibleIds = new Set(competitions.map(competition => competition.id));
+  for (const id of [...ui.selectedCompetitionIds]) {
+    if (!visibleIds.has(id)) ui.selectedCompetitionIds.delete(id);
+  }
+}
+
+function getSelectedCompetitions() {
+  const competitionsById = new Map(getAssignableCompetitions().map(competition => [competition.id, competition]));
+  return [...ui.selectedCompetitionIds].map(id => competitionsById.get(id)).filter(Boolean);
+}
+
+function resetCompetitionImport() {
+  ui.competitionImportRows = [];
+  ui.competitionImportFileName = "";
+  ui.competitionImportVisible = false;
+}
+
+function pluralizeCompetitions(count) {
+  if (count === 1) return "konkurencję";
+  if (count >= 2 && count <= 4) return "konkurencje";
+  return "konkurencji";
+}
+
+function createLocalCompetitionId(row) {
+  return `competition-local-${String(row.competitionNumber || Date.now()).toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function createCompetitionCode(name, number) {
+  return `${number || ""}-${name || ""}`
+    .normalize("NFD")
+    .replace(/[łŁ]/g, "l")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function getAssignableCompetitions() {
+  return (ui.state.competitions || [])
+    .filter(competition => !competition.deletedAt)
+    .sort((a, b) => compareCompetitionNumbers(getCompetitionNumber(a), getCompetitionNumber(b)) || a.name.localeCompare(b.name, "pl"));
+}
+
+function compareCompetitionNumbers(left, right) {
+  const leftValue = String(left || "").trim();
+  const rightValue = String(right || "").trim();
+  if (!leftValue && !rightValue) return 0;
+  if (!leftValue) return 1;
+  if (!rightValue) return -1;
+  const leftNumber = Number(leftValue);
+  const rightNumber = Number(rightValue);
+  if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) return leftNumber - rightNumber;
+  return leftValue.localeCompare(rightValue, "pl", { numeric: true });
+}
+
+function getAssignableJudges() {
+  return getDisplayUsers()
+    .filter(user => user.status === "active" && user.roles.includes("judge"))
+    .sort((a, b) => getUserFullName(a).localeCompare(getUserFullName(b), "pl"));
+}
+
+function getActiveJudgeAssignments() {
+  return (ui.state.deviceAssignments || []).filter(assignment => !assignment.deletedAt && assignment.judgeUserId && assignment.competitionId);
+}
+
+function getActiveAssignmentsForJudge(judgeId) {
+  return getActiveJudgeAssignments().filter(assignment => assignment.judgeUserId === judgeId);
+}
+
+function getActiveJudgeAssignment(judgeId) {
+  return getActiveAssignmentsForJudge(judgeId)[0] || null;
+}
+
+function getJudgesForCompetition(competitionId) {
+  const judgeIds = new Set(getActiveJudgeAssignments()
+    .filter(assignment => assignment.competitionId === competitionId)
+    .map(assignment => assignment.judgeUserId));
+  return getAssignableJudges().filter(judge => judgeIds.has(judge.id));
+}
+
+function getCompetitionById(competitionId) {
+  return getAssignableCompetitions().find(competition => competition.id === competitionId) || null;
+}
+
+function getCompetitionName(competitionId) {
+  return getCompetitionById(competitionId)?.name || "Brak";
+}
+
+function createJudgeAssignmentId(judgeId, competitionId) {
+  return `judge-assignment-${judgeId}-${competitionId}`;
+}
+
+function buildAssignmentConflictMessage(conflicts, targetCompetitionName) {
+  if (conflicts.length === 1) {
+    const judge = conflicts[0];
+    const assignment = getActiveJudgeAssignment(judge.id);
+    return `${getUserFullName(judge)} jest obecnie przypisany do konkurencji ${getCompetitionName(assignment?.competitionId)}.\nCzy chcesz zmienić jego przydział na ${targetCompetitionName}?`;
+  }
+  return `${conflicts.length} sędziów ma już aktywne przydziały do innych konkurencji.\nCzy chcesz zmienić ich przydział na ${targetCompetitionName}?`;
+}
+
+function showAssignmentMessage(message, type = "error") {
+  const box = $("#assignmentMessage");
+  if (!box) return;
+  box.textContent = message;
+  box.dataset.type = type;
+  box.hidden = false;
+}
+
+function renderAdminTeams() {
+  const container = $("#teamsContent");
+  if (!container || !ui.state) return;
+  if (ui.teamsView === "add") {
+    renderTeamForm(container, null);
+    return;
+  }
+  if (ui.teamsView === "edit") {
+    const team = getAdminTeams().find(item => item.id === ui.editingTeamId);
+    if (!team) {
+      resetTeamsHome();
+      renderAdminTeams();
+      return;
+    }
+    renderTeamForm(container, team);
+    return;
+  }
+  if (ui.teamsView === "import") {
+    renderTeamsImport(container);
+    return;
+  }
+  renderTeamsList(container);
+}
+
+function resetTeamsHome() {
+  ui.teamsView = "list";
+  ui.editingTeamId = null;
+  ui.teamImportRows = [];
+  ui.teamImportFileName = "";
+  ui.selectedTeamIds.clear();
+  ui.invalidTeamNumberIds.clear();
+}
+
+function renderTeamsList(container) {
+  const teams = getAdminTeams();
+  pruneSelectedTeams(teams);
+  ensureTeamNumberDrafts(teams);
+  container.innerHTML = `
+    <div class="admin-section-header assignments-header">
+      <div>
+        <h2>Zespoły</h2>
+        <p class="muted">Zarządzaj zespołami biorącymi udział w mistrzostwach.</p>
+      </div>
+      <div class="admin-header-actions">
+        <button type="button" class="secondary" data-teams-view="import">Importuj zespoły</button>
+        <button type="button" class="secondary" data-team-action="save-numbers">Zapisz numery</button>
+        <button type="button" id="addTeamBtn" data-teams-view="add">+ Dodaj zespół</button>
+      </div>
+    </div>
+    <div id="teamsMessage" class="bulk-message" role="alert" hidden></div>
+    ${renderTeamBulkActions()}
+    <div class="table-shell teams-table-shell">
+      <table class="users-table teams-table">
+        <thead>
+          <tr>
+            <th class="select-column">
+              <label class="select-all-label">
+                <input type="checkbox" id="selectAllTeams" ${areAllVisibleTeamsSelected(teams) ? "checked" : ""}>
+                <span>Zaznacz wszystkich</span>
+              </label>
+            </th>
+            <th>Nr</th><th>Nazwa zespołu</th><th>Akcje</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${teams.length ? teams.map(team => `
+            <tr>
+              <td class="select-column"><input type="checkbox" class="team-admin-select" data-team-id="${escapeHtml(team.id)}" aria-label="Zaznacz zespół ${escapeHtml(team.name)}" ${ui.selectedTeamIds.has(team.id) ? "checked" : ""}></td>
+              <td>
+                <input class="team-number-input${ui.invalidTeamNumberIds.has(team.id) ? " invalid" : ""}" data-team-number-id="${escapeHtml(team.id)}" inputmode="numeric" value="${escapeHtml(ui.teamNumberDrafts[team.id] ?? "")}" aria-label="Numer startowy zespołu ${escapeHtml(team.name)}">
+              </td>
+              <td>${escapeHtml(team.name)}</td>
+              <td>
+                <div class="table-actions icon-actions">
+                  <button type="button" class="secondary compact-button icon-button" data-team-action="edit" data-team-id="${escapeHtml(team.id)}" title="Edytuj" aria-label="Edytuj zespół ${escapeHtml(formatAdminTeamLabel(team))}">✎</button>
+                  <button type="button" class="secondary compact-button danger-button icon-button" data-team-action="delete" data-team-id="${escapeHtml(team.id)}" title="Usuń" aria-label="Usuń zespół ${escapeHtml(formatAdminTeamLabel(team))}">🗑</button>
+                </div>
+              </td>
+            </tr>
+          `).join("") : `<tr><td colspan="4">Brak zespołów.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+    <div class="team-admin-cards">
+      ${teams.length ? teams.map(team => `
+        <article class="user-card team-admin-card">
+          <label class="user-card-select">
+            <input type="checkbox" class="team-admin-select" data-team-id="${escapeHtml(team.id)}" aria-label="Zaznacz zespół ${escapeHtml(team.name)}" ${ui.selectedTeamIds.has(team.id) ? "checked" : ""}>
+            <span>Zaznacz</span>
+          </label>
+          <h3>${escapeHtml(team.name)}</h3>
+          <dl>
+            <div><dt>Nr</dt><dd><input class="team-number-input${ui.invalidTeamNumberIds.has(team.id) ? " invalid" : ""}" data-team-number-id="${escapeHtml(team.id)}" inputmode="numeric" value="${escapeHtml(ui.teamNumberDrafts[team.id] ?? "")}" aria-label="Numer startowy zespołu ${escapeHtml(team.name)}"></dd></div>
+          </dl>
+          <div class="table-actions">
+            <button type="button" class="secondary compact-button" data-team-action="edit" data-team-id="${escapeHtml(team.id)}">Edytuj</button>
+            <button type="button" class="secondary compact-button danger-button" data-team-action="delete" data-team-id="${escapeHtml(team.id)}">Usuń</button>
+          </div>
+        </article>
+      `).join("") : `<div class="empty-state">Brak zespołów.</div>`}
+    </div>
+    <div class="table-footer">
+      <strong>Łącznie: <span id="teamsCount">${teams.length}</span> ${pluralizeTeams(teams.length)}</strong>
+    </div>
+  `;
+}
+
+function renderTeamBulkActions() {
+  const count = ui.selectedTeamIds.size;
+  if (!count) return "";
+  return `
+    <div class="bulk-actions-bar">
+      <strong>Zaznaczono: ${count}</strong>
+      <div class="bulk-actions">
+        <button type="button" class="secondary compact-button" data-team-action="clear-numbers">Usuń numer</button>
+        <button type="button" class="secondary compact-button danger-button" data-team-action="bulk-delete">Usuń</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderTeamForm(container, team) {
+  const isEdit = Boolean(team);
+  container.innerHTML = `
+    <div class="assignments-detail-header">
+      <div>
+        <h2>${isEdit ? "Edytuj zespół" : "Dodaj zespół"}</h2>
+        <p class="muted">${isEdit ? "Zmień dane zespołu w lokalnym modelu demonstracyjnym." : "Dodaj zespół do listy uczestników mistrzostw."}</p>
+      </div>
+      <button type="button" class="secondary compact-button" data-teams-view="list">Wróć do listy</button>
+    </div>
+    <div class="user-form-panel">
+      <form id="teamForm" class="user-form">
+        <div id="teamFormError" class="login-error" role="alert" hidden></div>
+        <input type="hidden" id="teamIdInput" value="${escapeHtml(team?.id || "")}">
+        <div class="form-grid">
+          <label>
+            Nr zespołu
+            <input id="teamAdminNumberInput" value="${escapeHtml(team?.number || "")}" autocomplete="off">
+          </label>
+          <label>
+            Nazwa zespołu
+            <input id="teamAdminNameInput" value="${escapeHtml(team?.name || "")}" autocomplete="off">
+          </label>
+        </div>
+        <div class="action-row">
+          <button type="button" class="secondary" data-teams-view="list">Anuluj</button>
+          <button type="submit">${isEdit ? "Zapisz zmiany" : "Dodaj zespół"}</button>
+        </div>
+      </form>
+    </div>
+  `;
+  $("#teamAdminNumberInput").focus();
+}
+
+function renderTeamsImport(container) {
+  const rows = ui.teamImportRows || [];
+  const validRows = rows.filter(row => row.valid);
+  container.innerHTML = `
+    <div class="assignments-detail-header">
+      <div>
+        <h2>Importuj zespoły</h2>
+        <p class="muted">Wybierz plik XLSX lub CSV z kolumną Nazwa zespołu. Numer startowy może pozostać pusty do czasu losowania.</p>
+      </div>
+      <button type="button" class="secondary compact-button" data-teams-view="list">Wróć do listy</button>
+    </div>
+    <div class="user-form-panel import-users-panel">
+      <label>
+        Plik CSV / Excel
+        <input id="teamImportFileInput" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+      </label>
+      <div id="teamImportMessage" class="bulk-message" role="alert" ${ui.teamImportFileName ? "" : "hidden"}>${escapeHtml(ui.teamImportFileName ? `Plik: ${ui.teamImportFileName}. Wykryto ${rows.length} ${pluralizeRows(rows.length)}.` : "")}</div>
+      ${rows.length ? `
+        <div class="import-summary">
+          <strong>Podgląd przed importem</strong>
+          <span>Poprawne: ${validRows.length}</span>
+          <span>Wymagają poprawy: ${rows.length - validRows.length}</span>
+        </div>
+        <div class="table-shell teams-table-shell">
+          <table class="users-table teams-import-table">
+            <thead><tr><th>Nr zespołu</th><th>Nazwa zespołu</th><th>Status</th></tr></thead>
+            <tbody>
+              ${rows.map(row => `
+                <tr>
+                  <td>${escapeHtml(row.number)}</td>
+                  <td>${escapeHtml(row.name)}</td>
+                  <td><span class="badge ${row.valid ? "ok" : "warn"}">${escapeHtml(row.valid ? "Poprawny" : row.errors.join(", "))}</span></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+        <div class="action-row">
+          <button type="button" class="secondary" data-teams-view="list">Anuluj</button>
+          <button type="button" data-team-action="import-confirm" ${validRows.length ? "" : "disabled"}>Importuj ${validRows.length} ${pluralizeTeams(validRows.length)}</button>
+        </div>
+      ` : `
+        <div class="import-columns">
+          <strong>Oczekiwane kolumny:</strong>
+          <span>Nr zespołu</span>
+          <span>Nazwa zespołu</span>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function handleTeamsClick(event) {
+  const viewButton = event.target.closest("[data-teams-view]");
+  if (viewButton) {
+    ui.teamsView = viewButton.dataset.teamsView;
+    if (ui.teamsView === "list") {
+      resetTeamsHome();
+    }
+    renderAdminTeams();
+    return;
+  }
+  const actionButton = event.target.closest("[data-team-action]");
+  if (!actionButton) return;
+  const action = actionButton.dataset.teamAction;
+  if (action === "edit") {
+    ui.editingTeamId = actionButton.dataset.teamId;
+    ui.teamsView = "edit";
+    renderAdminTeams();
+  }
+  if (action === "delete") {
+    requestDeleteTeam(actionButton.dataset.teamId);
+  }
+  if (action === "import-confirm") {
+    importValidTeams();
+  }
+  if (action === "save-numbers") {
+    saveTeamNumbers();
+  }
+  if (action === "clear-numbers") {
+    requestClearTeamNumbers();
+  }
+  if (action === "bulk-delete") {
+    requestBulkDeleteTeams();
+  }
+}
+
+function handleTeamsSubmit(event) {
+  if (!event.target.matches("#teamForm")) return;
+  event.preventDefault();
+  saveTeamFromForm();
+}
+
+function handleTeamsChange(event) {
+  if (event.target.id === "teamImportFileInput") {
+    readTeamImportFile(event.target.files?.[0]);
+  }
+  if (event.target.id === "selectAllTeams") {
+    syncTeamNumberDraftsFromInputs();
+    toggleAllVisibleTeams(event.target.checked);
+  }
+  if (event.target.matches(".team-admin-select")) {
+    syncTeamNumberDraftsFromInputs();
+    toggleTeamSelection(event.target.dataset.teamId, event.target.checked);
+  }
+  if (event.target.matches(".team-number-input")) {
+    ui.teamNumberDrafts[event.target.dataset.teamNumberId] = event.target.value.trim();
+    ui.invalidTeamNumberIds.delete(event.target.dataset.teamNumberId);
+    event.target.classList.remove("invalid");
+  }
+}
+
+async function saveTeamFromForm() {
+  const teamId = $("#teamIdInput").value || createLocalTeamId();
+  const isEdit = Boolean(ui.editingTeamId);
+  const previous = getAdminTeams().find(team => team.id === teamId);
+  const number = $("#teamAdminNumberInput").value.trim();
+  const name = $("#teamAdminNameInput").value.trim();
+  const error = validateTeamForm({ teamId, number, name });
+  if (error) {
+    showTeamFormError(error);
+    return;
+  }
+  const now = new Date().toISOString();
+  await repository.upsertTeam({
+    ...(previous || {}),
+    id: teamId,
+    eventId: previous?.eventId || getDefaultEventId(),
+    number,
+    name,
+    institution: previous?.institution || "",
+    deletedAt: null,
+    deletedBy: null,
+    updatedAt: now,
+    createdAt: previous?.createdAt || now
+  });
+  ui.state = await repository.getState();
+  if (!isEdit) ui.selectedTeamId = teamId;
+  resetTeamsHome();
+  renderAdminTeams();
+  renderTeamList();
+}
+
+function validateTeamForm({ teamId, number, name }) {
+  if (!name) return "Nazwa zespołu jest wymagana.";
+  const duplicate = number
+    ? getAdminTeams().find(team => team.id !== teamId && String(team.number || "").trim().toLowerCase() === number.toLowerCase())
+    : null;
+  if (duplicate) return "Ten numer zespołu jest już używany.";
+  return null;
+}
+
+function showTeamFormError(message) {
+  const box = $("#teamFormError");
+  if (!box) return;
+  box.textContent = message;
+  box.hidden = false;
+}
+
+function requestDeleteTeam(teamId) {
+  const team = getAdminTeams().find(item => item.id === teamId);
+  if (!team) return;
+  showConfirmDialog({
+    title: "Usuń zespół",
+    message: `Czy na pewno chcesz usunąć zespół ${formatAdminTeamLabel(team)}?`,
+    confirmLabel: "Usuń zespół",
+    onConfirm: () => softDeleteTeam(team)
+  });
+}
+
+async function softDeleteTeam(team) {
+  const now = new Date().toISOString();
+  await repository.upsertTeam({
+    ...team,
+    deletedAt: now,
+    deletedBy: getUserId(),
+    updatedAt: now
+  });
+  if (ui.selectedTeamId === team.id) ui.selectedTeamId = null;
+  ui.selectedTeamIds.delete(team.id);
+  ui.state = await repository.getState();
+  renderAdminTeams();
+  renderTeamList();
+}
+
+function requestBulkDeleteTeams() {
+  const teams = getSelectedTeams();
+  if (!teams.length) return;
+  showConfirmDialog({
+    title: "Usuń zespoły",
+    message: `Czy na pewno chcesz usunąć ${teams.length} ${pluralizeTeams(teams.length)}?`,
+    confirmLabel: `Usuń ${teams.length} ${pluralizeTeams(teams.length)}`,
+    onConfirm: () => softDeleteTeams(teams)
+  });
+}
+
+async function softDeleteTeams(teams) {
+  const now = new Date().toISOString();
+  for (const team of teams) {
+    await repository.upsertTeam({
+      ...team,
+      deletedAt: now,
+      deletedBy: getUserId(),
+      updatedAt: now
+    });
+    ui.selectedTeamIds.delete(team.id);
+    if (ui.selectedTeamId === team.id) ui.selectedTeamId = null;
+  }
+  ui.state = await repository.getState();
+  renderAdminTeams();
+  renderTeamList();
+}
+
+function requestClearTeamNumbers() {
+  syncTeamNumberDraftsFromInputs();
+  const teams = getSelectedTeams();
+  if (!teams.length) return;
+  showConfirmDialog({
+    title: "Usuń numery startowe",
+    message: `Usunąć numery startowe z ${teams.length} zaznaczonych ${pluralizeTeams(teams.length)}?`,
+    confirmLabel: "Usuń numery",
+    onConfirm: () => clearTeamNumbers(teams)
+  });
+}
+
+async function clearTeamNumbers(teams) {
+  const now = new Date().toISOString();
+  for (const team of teams) {
+    await repository.upsertTeam({
+      ...team,
+      number: "",
+      updatedAt: now
+    });
+    ui.teamNumberDrafts[team.id] = "";
+    ui.invalidTeamNumberIds.delete(team.id);
+  }
+  ui.state = await repository.getState();
+  renderAdminTeams();
+  renderTeamList();
+  showTeamMessage("Numery startowe usunięte.", "ok");
+}
+
+function ensureTeamNumberDrafts(teams) {
+  const visibleIds = new Set(teams.map(team => team.id));
+  for (const team of teams) {
+    if (!(team.id in ui.teamNumberDrafts)) {
+      ui.teamNumberDrafts[team.id] = String(team.number || "");
+    }
+  }
+  for (const id of Object.keys(ui.teamNumberDrafts)) {
+    if (!visibleIds.has(id)) delete ui.teamNumberDrafts[id];
+  }
+}
+
+function syncTeamNumberDraftsFromInputs() {
+  document.querySelectorAll(".team-number-input").forEach(input => {
+    if (input.offsetParent === null) return;
+    ui.teamNumberDrafts[input.dataset.teamNumberId] = input.value.trim();
+  });
+}
+
+async function saveTeamNumbers() {
+  syncTeamNumberDraftsFromInputs();
+  const teams = getAdminTeams();
+  const validation = validateTeamNumberDrafts(teams);
+  ui.invalidTeamNumberIds = validation.invalidIds;
+  if (validation.error) {
+    renderAdminTeams();
+    showTeamMessage(validation.error);
+    return;
+  }
+  const now = new Date().toISOString();
+  for (const team of teams) {
+    const nextNumber = String(ui.teamNumberDrafts[team.id] ?? "").trim();
+    if (String(team.number || "") === nextNumber) continue;
+    await repository.upsertTeam({
+      ...team,
+      number: nextNumber,
+      updatedAt: now
+    });
+  }
+  ui.state = await repository.getState();
+  ui.invalidTeamNumberIds.clear();
+  ui.teamNumberDrafts = {};
+  renderAdminTeams();
+  renderTeamList();
+  showTeamMessage("Numery startowe zapisane", "ok");
+}
+
+function validateTeamNumberDrafts(teams) {
+  const byNumber = new Map();
+  for (const team of teams) {
+    const number = String(ui.teamNumberDrafts[team.id] ?? "").trim();
+    if (!number) continue;
+    const key = number.toLowerCase();
+    if (!byNumber.has(key)) byNumber.set(key, []);
+    byNumber.get(key).push(team.id);
+  }
+  for (const [number, ids] of byNumber.entries()) {
+    if (ids.length > 1) {
+      return {
+        invalidIds: new Set(ids),
+        error: `Numer startowy ${number} jest przypisany do więcej niż jednego zespołu.`
+      };
+    }
+  }
+  return { invalidIds: new Set(), error: "" };
+}
+
+function showTeamMessage(message, type = "error") {
+  const box = $("#teamsMessage");
+  if (!box) return;
+  box.textContent = message;
+  box.dataset.type = type;
+  box.hidden = false;
+}
+
+function readTeamImportFile(file) {
+  ui.teamImportRows = [];
+  ui.teamImportFileName = file?.name || "";
+  if (!file) {
+    renderAdminTeams();
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const rows = /\.xlsx$/i.test(file.name)
+        ? await parseXlsxRows(reader.result)
+        : parseCsvRows(String(reader.result || ""));
+      ui.teamImportRows = buildTeamImportPreview(rows);
+    } catch (error) {
+      ui.teamImportRows = [{
+        rowNumber: 1,
+        number: "",
+        name: "",
+        institution: "",
+        valid: false,
+        errors: [error.message]
+      }];
+    }
+    renderAdminTeams();
+  };
+  if (/\.xlsx$/i.test(file.name)) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file, "utf-8");
+}
+
+function buildTeamImportPreview(rows) {
+  const parsedRows = rows.filter(row => row.some(cell => String(cell).trim()));
+  if (parsedRows.length < 2) throw new Error("Plik nie zawiera danych do importu.");
+  const headers = parsedRows[0].map(normalizeImportHeader);
+  const numberIndex = findImportColumn(headers, ["nr zespolu", "nr", "numer", "numer zespolu"]);
+  const nameIndex = findImportColumn(headers, ["nazwa zespolu", "nazwa", "zespol"]);
+  const institutionIndex = findImportColumn(headers, ["instytucja", "jednostka"]);
+  if (nameIndex === -1) {
+    throw new Error("Brakuje wymaganej kolumny: Nazwa zespołu.");
+  }
+  const existingNumbers = new Set(getAdminTeams().map(team => String(team.number || "").trim().toLowerCase()).filter(Boolean));
+  const importedCounts = new Map();
+  const rawRows = parsedRows.slice(1).map((cells, index) => ({
+    rowNumber: index + 2,
+    number: numberIndex === -1 ? "" : String(cells[numberIndex] || "").trim(),
+    name: String(cells[nameIndex] || "").trim(),
+    institution: institutionIndex === -1 ? "" : String(cells[institutionIndex] || "").trim()
+  }));
+  for (const row of rawRows) {
+    const key = row.number.toLowerCase();
+    if (key) importedCounts.set(key, (importedCounts.get(key) || 0) + 1);
+  }
+  return rawRows.map(row => {
+    const errors = [];
+    const key = row.number.toLowerCase();
+    if (!row.name) errors.push("brak nazwy");
+    if (key && existingNumbers.has(key)) errors.push("numer już istnieje");
+    if (key && importedCounts.get(key) > 1) errors.push("powtórzony numer w pliku");
+    return { ...row, valid: errors.length === 0, errors };
+  });
+}
+
+async function importValidTeams() {
+  const rows = (ui.teamImportRows || []).filter(row => row.valid);
+  if (!rows.length) return;
+  const now = new Date().toISOString();
+  for (const row of rows) {
+    await repository.upsertTeam({
+      id: createLocalTeamId(),
+      eventId: getDefaultEventId(),
+      number: row.number,
+      name: row.name,
+      institution: row.institution,
+      deletedAt: null,
+      deletedBy: null,
+      createdAt: now,
+      updatedAt: now
+    });
+  }
+  ui.state = await repository.getState();
+  resetTeamsHome();
+  renderAdminTeams();
+  renderTeamList();
+}
+
+function getAdminTeams() {
+  return (ui.state.teams || [])
+    .filter(team => !team.deletedAt)
+    .map(team => ({ ...team, institution: team.institution || "" }))
+    .sort((a, b) => compareTeamNumbers(a.number, b.number) || a.name.localeCompare(b.name, "pl"));
+}
+
+function toggleTeamSelection(teamId, checked) {
+  if (checked) ui.selectedTeamIds.add(teamId);
+  else ui.selectedTeamIds.delete(teamId);
+  renderAdminTeams();
+}
+
+function toggleAllVisibleTeams(checked) {
+  const teams = getAdminTeams();
+  if (checked) teams.forEach(team => ui.selectedTeamIds.add(team.id));
+  else teams.forEach(team => ui.selectedTeamIds.delete(team.id));
+  renderAdminTeams();
+}
+
+function areAllVisibleTeamsSelected(teams) {
+  return teams.length > 0 && teams.every(team => ui.selectedTeamIds.has(team.id));
+}
+
+function pruneSelectedTeams(teams) {
+  const visibleIds = new Set(teams.map(team => team.id));
+  for (const id of [...ui.selectedTeamIds]) {
+    if (!visibleIds.has(id)) ui.selectedTeamIds.delete(id);
+  }
+}
+
+function getSelectedTeams() {
+  const teamsById = new Map(getAdminTeams().map(team => [team.id, team]));
+  return [...ui.selectedTeamIds].map(id => teamsById.get(id)).filter(Boolean);
+}
+
+function compareTeamNumbers(left, right) {
+  const leftValue = String(left || "").trim();
+  const rightValue = String(right || "").trim();
+  if (!leftValue && !rightValue) return 0;
+  if (!leftValue) return 1;
+  if (!rightValue) return -1;
+  const leftNumber = Number(leftValue);
+  const rightNumber = Number(rightValue);
+  if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) return leftNumber - rightNumber;
+  return leftValue.localeCompare(rightValue, "pl", { numeric: true });
+}
+
+function parseCsvRows(text) {
+  const delimiter = detectCsvDelimiter(text);
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+    if (char === "\"") {
+      if (inQuotes && next === "\"") {
+        cell += "\"";
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === delimiter && !inQuotes) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") index += 1;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+  row.push(cell);
+  rows.push(row);
+  return rows;
+}
+
+function detectCsvDelimiter(text) {
+  const firstLine = text.split(/\r?\n/)[0] || "";
+  return (firstLine.match(/;/g) || []).length >= (firstLine.match(/,/g) || []).length ? ";" : ",";
+}
+
+function normalizeImportHeader(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[łŁ]/g, "l")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function findImportColumn(headers, candidates) {
+  return headers.findIndex(header => candidates.includes(header));
+}
+
+function formatAdminTeamLabel(team) {
+  return `nr ${team.number || "—"} – ${team.name}`;
+}
+
+function pluralizeTeams(count) {
+  if (count === 1) return "zespół";
+  if (count >= 2 && count <= 4) return "zespoły";
+  return "zespołów";
+}
+
+function pluralizeRows(count) {
+  if (count === 1) return "wiersz";
+  if (count >= 2 && count <= 4) return "wiersze";
+  return "wierszy";
+}
+
+function createLocalTeamId() {
+  return `team-local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getDefaultEventId() {
+  return ui.state.events?.find(event => !event.deletedAt)?.id || "event-demo-2026";
 }
 
 function renderTeamList() {
@@ -1263,12 +3820,21 @@ async function trySync() {
 }
 
 async function renderRanking() {
+  ui.state = await repository.getState();
   const rows = await rankingService.getGeneralRanking();
+  ui.rankingLastUpdatedAt = new Date();
+  $("#rankingUpdatedAt").textContent = `Ostatnia aktualizacja: ${formatDate(ui.rankingLastUpdatedAt.toISOString())}`;
   $("#rankingBody").innerHTML = rows.length
     ? rows.map((row, index) => `
-      <tr><td>${index + 1}</td><td>${escapeHtml(formatRankingTeamName(row))}</td><td>${row.completedCompetitions}</td><td><b>${row.total}</b></td></tr>
+      <tr>
+        <td><strong>${row.place || "—"}</strong></td>
+        <td>${escapeHtml(row.teamNumber || "")}</td>
+        <td>${escapeHtml(row.teamName)}</td>
+        <td><b>${formatNumber(row.total)}</b></td>
+        <td>${formatPercentage(row.percentage)}</td>
+      </tr>
     `).join("")
-    : `<tr><td colspan="4">Brak zatwierdzonych wyników.</td></tr>`;
+    : `<tr><td colspan="5">Brak zatwierdzonych wyników.</td></tr>`;
 }
 
 async function renderAudit() {
@@ -1288,9 +3854,299 @@ async function renderAudit() {
     : `<tr><td colspan="7">Brak wpisów audytu.</td></tr>`;
 }
 
+async function renderMessages() {
+  const container = $("#messagesContent");
+  if (!container) return;
+  const messages = await repository.listMessages();
+  ui.state.messages = messages;
+  const filteredMessages = filterMessages(messages);
+  container.innerHTML = `
+    <div class="admin-section-header assignments-header">
+      <div>
+        <h2>Komunikaty</h2>
+        <p class="muted">Komunikaty organizacyjne dla sędziów. Potwierdzenia odbioru będą wykorzystywane w kolejnych etapach.</p>
+      </div>
+      <button type="button" data-message-action="new">+ Nowy komunikat</button>
+    </div>
+    <div id="messageFeedback" class="bulk-message" role="alert" hidden></div>
+    ${ui.messageComposerOpen ? renderMessageComposer() : ""}
+    <div class="message-tabs" role="tablist" aria-label="Filtr komunikatów">
+      ${renderMessageTab("all", "Wszystkie")}
+      ${renderMessageTab("sent", "Wysłane")}
+      ${renderMessageTab("scheduled", "Zaplanowane")}
+    </div>
+    <div class="table-shell messages-table-shell">
+      <table class="users-table messages-table">
+        <thead>
+          <tr>
+            <th>Tytuł</th>
+            <th>Treść / podgląd</th>
+            <th>Status</th>
+            <th>Odbiorcy</th>
+            <th>Potwierdzenie odbioru</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredMessages.length ? filteredMessages.map(renderMessageRow).join("") : `<tr><td colspan="5">Brak komunikatów.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderMessageTab(view, label) {
+  return `<button type="button" class="secondary compact-button ${ui.messagesView === view ? "active" : ""}" data-message-filter="${view}">${label}</button>`;
+}
+
+function renderMessageComposer() {
+  const competitions = getAssignableCompetitions();
+  return `
+    <form id="messageForm" class="user-form-panel message-form">
+      <div class="message-form-header">
+        <h3>Nowy komunikat</h3>
+        <button type="submit">Wyślij</button>
+      </div>
+      <div class="form-grid">
+        <label>
+          Tytuł
+          <input id="messageTitleInput" name="title" required autocomplete="off">
+        </label>
+        <label>
+          Ważność
+          <select id="messagePriorityInput" name="priority">
+            <option value="info">Informacja</option>
+            <option value="important">Ważne</option>
+            <option value="urgent">Pilne</option>
+          </select>
+        </label>
+        <label>
+          Status
+          <select id="messageStatusInput" name="status">
+            <option value="sent">Wysłany</option>
+            <option value="scheduled">Zaplanowany</option>
+          </select>
+        </label>
+      </div>
+      <label>
+        Treść komunikatu
+        <textarea id="messageBodyInput" name="body" rows="4" required></textarea>
+      </label>
+      <fieldset class="message-targets">
+        <legend>Wyślij do</legend>
+        <label><input type="radio" name="messageAudience" value="all_competitions"> Wszystkie konkurencje</label>
+        <label><input type="radio" name="messageAudience" value="selected_competitions"> Wybrane konkurencje</label>
+      </fieldset>
+      <div id="messageCompetitionPicker" class="assignment-check-list message-competition-picker">
+        ${competitions.length ? competitions.map(competition => `
+          <label class="assignment-check-row">
+            <input type="checkbox" name="messageCompetition" value="${escapeHtml(competition.id)}">
+            <span><strong>${escapeHtml(competition.name)}</strong></span>
+          </label>
+        `).join("") : `<div class="empty-state">Brak konkurencji.</div>`}
+      </div>
+      <div id="messageFormError" class="login-error" role="alert" hidden></div>
+      <div class="action-row">
+        <button type="button" class="secondary" data-message-action="cancel-new">Anuluj</button>
+        <button type="submit">Wyślij</button>
+      </div>
+    </form>
+  `;
+}
+
+function renderMessageRow(message) {
+  const recipients = getMessageRecipients(message);
+  const confirmedCount = recipients.filter(user => message.confirmations?.[user.id]).length;
+  const unconfirmed = getUnconfirmedMessageRecipients(message);
+  return `
+    <tr>
+      <td><strong>${escapeHtml(message.title)}</strong><br><small>${escapeHtml(formatMessagePriority(message.priority))}</small></td>
+      <td>${escapeHtml(shortenText(message.body, 120))}</td>
+      <td><span class="badge ${message.status === "sent" ? "ok" : "warn"}">${escapeHtml(formatMessageStatus(message.status))}</span></td>
+      <td>${escapeHtml(formatMessageAudience(message))}</td>
+      <td>
+        <div class="message-confirmation-cell">
+          <span>${confirmedCount} z ${recipients.length}</span>
+          <button type="button" class="secondary compact-button" data-message-action="toggle-unconfirmed" data-message-id="${escapeHtml(message.id)}" title="Pokaż osoby bez potwierdzenia">👁</button>
+        </div>
+        ${ui.messageUnconfirmedId === message.id ? `
+          <div class="message-unconfirmed-panel">
+            <strong>Nie potwierdzili:</strong>
+            ${unconfirmed.length ? `<ul>${unconfirmed.map(user => `<li>${escapeHtml(getUserFullName(user))}</li>`).join("")}</ul>` : `<p>Wszyscy odbiorcy potwierdzili odbiór.</p>`}
+          </div>
+        ` : ""}
+      </td>
+    </tr>
+  `;
+}
+
+function filterMessages(messages) {
+  const active = (messages || []).filter(message => !message.deletedAt);
+  if (ui.messagesView === "sent") return active.filter(message => message.status === "sent");
+  if (ui.messagesView === "scheduled") return active.filter(message => message.status === "scheduled");
+  return active;
+}
+
+function handleMessagesClick(event) {
+  const filterButton = event.target.closest("[data-message-filter]");
+  if (filterButton) {
+    ui.messagesView = filterButton.dataset.messageFilter;
+    ui.messageUnconfirmedId = null;
+    renderMessages();
+    return;
+  }
+  const actionButton = event.target.closest("[data-message-action]");
+  if (!actionButton) return;
+  const action = actionButton.dataset.messageAction;
+  if (action === "new") {
+    ui.messageComposerOpen = true;
+    ui.messageUnconfirmedId = null;
+    renderMessages();
+  }
+  if (action === "cancel-new") {
+    ui.messageComposerOpen = false;
+    renderMessages();
+  }
+  if (action === "toggle-unconfirmed") {
+    ui.messageUnconfirmedId = ui.messageUnconfirmedId === actionButton.dataset.messageId ? null : actionButton.dataset.messageId;
+    renderMessages();
+  }
+}
+
+function handleMessagesChange(event) {
+  if (event.target.name !== "messageAudience") return;
+  setMessageCompetitionPickerMode(event.target.value);
+}
+
+function setMessageCompetitionPickerMode(audienceType) {
+  const allCompetitions = audienceType === "all_competitions";
+  document.querySelectorAll("input[name='messageCompetition']").forEach(input => {
+    input.checked = allCompetitions;
+    input.disabled = false;
+  });
+}
+
+async function handleMessagesSubmit(event) {
+  if (event.target.id !== "messageForm") return;
+  event.preventDefault();
+  const title = $("#messageTitleInput").value.trim();
+  const body = $("#messageBodyInput").value.trim();
+  const priority = $("#messagePriorityInput").value;
+  const status = $("#messageStatusInput").value;
+  const audienceType = document.querySelector("input[name='messageAudience']:checked")?.value || "";
+  const competitionIds = [...document.querySelectorAll("input[name='messageCompetition']:checked")].map(input => input.value);
+  const error = validateMessageForm({ title, body, audienceType, competitionIds });
+  if (error) {
+    showMessageFormError(error);
+    return;
+  }
+  const now = new Date().toISOString();
+  await repository.upsertMessage({
+    id: createLocalMessageId(),
+    title,
+    body,
+    priority,
+    status,
+    audience: {
+      type: "competitions",
+      mode: audienceType === "all_competitions" ? "all" : "selected",
+      competitionIds
+    },
+    confirmations: {},
+    createdAt: now,
+    updatedAt: now,
+    createdBy: getUserId(),
+    deletedAt: null,
+    deletedBy: null
+  });
+  ui.messageComposerOpen = false;
+  ui.messagesView = "all";
+  ui.messageUnconfirmedId = null;
+  await renderMessages();
+  showMessageFeedback("Komunikat został zapisany.", "ok");
+}
+
+function validateMessageForm({ title, body, audienceType, competitionIds }) {
+  if (!title) return "Tytuł jest wymagany.";
+  if (!body) return "Treść komunikatu jest wymagana.";
+  if (!audienceType) return "Wskaż odbiorców komunikatu.";
+  if (!competitionIds.length) return "Wybierz co najmniej jedną konkurencję.";
+  return null;
+}
+
+function showMessageFormError(message) {
+  const box = $("#messageFormError");
+  if (!box) return;
+  box.textContent = message;
+  box.hidden = false;
+}
+
+function showMessageFeedback(message, type = "error") {
+  const box = $("#messageFeedback");
+  if (!box) return;
+  box.textContent = message;
+  box.dataset.type = type;
+  box.hidden = false;
+}
+
+function resetMessagesHome() {
+  ui.messagesView = "all";
+  ui.messageComposerOpen = false;
+  ui.messageUnconfirmedId = null;
+}
+
+function getMessageRecipients(message) {
+  if (message.audience?.type === "competitions") {
+    const ids = new Set(message.audience.competitionIds || []);
+    const recipients = new Map();
+    for (const assignment of getActiveJudgeAssignments().filter(item => ids.has(item.competitionId))) {
+      const judge = getAssignableJudges().find(user => user.id === assignment.judgeUserId);
+      if (judge) recipients.set(judge.id, judge);
+    }
+    return [...recipients.values()].sort((a, b) => getUserFullName(a).localeCompare(getUserFullName(b), "pl"));
+  }
+  return [];
+}
+
+function getUnconfirmedMessageRecipients(message) {
+  return getMessageRecipients(message).filter(user => !message.confirmations?.[user.id]);
+}
+
+function formatMessageAudience(message) {
+  if (message.audience?.type === "competitions") {
+    const names = (message.audience.competitionIds || []).map(getCompetitionName);
+    if (message.audience.mode === "all") return "Wszystkie konkurencje";
+    return names.length ? names.join(", ") : "Wybrane konkurencje";
+  }
+  return "—";
+}
+
+function formatMessagePriority(priority) {
+  if (priority === "urgent") return "Pilne";
+  if (priority === "important") return "Ważne";
+  return "Informacja";
+}
+
+function formatMessageStatus(status) {
+  return status === "scheduled" ? "Zaplanowany" : "Wysłany";
+}
+
+function shortenText(value, length) {
+  const text = String(value || "");
+  return text.length > length ? `${text.slice(0, length - 1)}…` : text;
+}
+
+function createLocalMessageId() {
+  return `message-local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 async function renderSyncQueue() {
   const operations = await repository.listSyncOperations();
-  $("#syncBody").innerHTML = operations.length
+  const body = $("#syncBody");
+  if (!body) {
+    renderSyncStatus();
+    return;
+  }
+  body.innerHTML = operations.length
     ? operations.map(operation => `
       <tr>
         <td><span class="badge ${operation.status === SyncStatus.SENT ? "ok" : "warn"}">${operation.status}</span></td>
@@ -1305,13 +4161,100 @@ async function renderSyncQueue() {
   renderSyncStatus();
 }
 
+async function renderSyncDashboard() {
+  const container = $("#syncDashboard");
+  if (!container) return;
+  ui.state = await repository.getState();
+  const operations = await repository.listSyncOperations();
+  const users = getDisplayUsers();
+  const judges = getAssignableJudges();
+  const teams = getAdminTeams();
+  const devices = getKnownDevices(operations);
+  const queued = operations.filter(operation => operation.status !== SyncStatus.SENT);
+  const failed = operations.filter(operation => operation.status === SyncStatus.FAILED || operation.status === SyncStatus.CONFLICT);
+  container.innerHTML = `
+    <div class="sync-dashboard-grid">
+      <button type="button" class="sync-dashboard-card sync-dashboard-button" data-sync-action="toggle-connection" aria-expanded="${ui.syncConnectionExpanded ? "true" : "false"}">
+        <span>Stan połączenia</span>
+        <strong>${failed.length ? "Wymaga uwagi" : "Lokalny cache gotowy"}</strong>
+        <small>${queued.length} operacji w kolejce</small>
+      </button>
+      <section class="sync-dashboard-card">
+        <span>Dane sędziów</span>
+        <strong>${judges.length}</strong>
+        <small>${users.length} użytkowników w lokalnym modelu</small>
+      </section>
+      <section class="sync-dashboard-card">
+        <span>Dane zespołów</span>
+        <strong>${teams.length}</strong>
+        <small>aktywnych zespołów w lokalnym cache</small>
+      </section>
+    </div>
+    ${ui.syncConnectionExpanded ? `
+      <section class="sync-details-panel">
+        <h3>Połączone tablety: ${devices.length}</h3>
+        ${devices.length ? `<ul>${devices.map(device => `<li>${escapeHtml(device)}</li>`).join("")}</ul>` : `<p class="muted">Brak danych o połączonych urządzeniach.</p>`}
+      </section>
+    ` : ""}
+    <section class="sync-history-panel">
+      <h3>Historia synchronizacji</h3>
+      <div class="table-shell">
+        <table class="users-table">
+          <thead><tr><th>Status</th><th>Typ</th><th>Encja</th><th>Wersja</th><th>Próby</th><th>Operacja</th></tr></thead>
+          <tbody>
+            ${operations.length ? operations.map(operation => `
+              <tr>
+                <td><span class="badge ${operation.status === SyncStatus.SENT ? "ok" : "warn"}">${escapeHtml(operation.status)}</span></td>
+                <td>${escapeHtml(operation.type)}</td>
+                <td>${escapeHtml(operation.entity)}<br><small>${escapeHtml(operation.entity_id || operation.entityId || "")}</small></td>
+                <td>${operation.entity_version ?? operation.entityVersion ?? ""}</td>
+                <td>${operation.retry_count ?? operation.retryCount ?? 0}/${operation.max_retries ?? operation.maxRetries ?? 0}</td>
+                <td><small>${escapeHtml(operation.client_operation_id || operation.clientOperationId || operation.id || "")}</small></td>
+              </tr>
+            `).join("") : `<tr><td colspan="6">Brak wpisów historii synchronizacji.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+  renderSyncStatus();
+}
+
+function handleSyncDashboardClick(event) {
+  const button = event.target.closest("[data-sync-action]");
+  if (!button) return;
+  if (button.dataset.syncAction === "toggle-connection") {
+    ui.syncConnectionExpanded = !ui.syncConnectionExpanded;
+    renderSyncDashboard();
+  }
+}
+
+function resetSyncHome() {
+  ui.syncConnectionExpanded = false;
+}
+
+function getKnownDevices(operations = []) {
+  const devices = new Set();
+  if (ui.state?.device?.deviceId) devices.add(ui.state.device.deviceId);
+  for (const assignment of ui.state?.deviceAssignments || []) {
+    if (!assignment.deletedAt && assignment.deviceId) devices.add(assignment.deviceId);
+  }
+  for (const operation of operations) {
+    const deviceId = operation.device_id || operation.deviceId;
+    if (deviceId) devices.add(deviceId);
+  }
+  return [...devices].sort((a, b) => a.localeCompare(b, "pl", { numeric: true }));
+}
+
 function renderSyncStatus() {
+  const syncPill = $("#syncPill");
+  if (!syncPill) return;
   const operations = ui.state?.syncOperations || [];
   const failed = operations.filter(item => item.status === SyncStatus.FAILED || item.status === SyncStatus.CONFLICT).length;
   const queued = operations.filter(item => item.status !== SyncStatus.SENT).length;
-  if (failed) $("#syncPill").textContent = `Błąd sync: ${failed}`;
-  else if (queued) $("#syncPill").textContent = `W kolejce: ${queued}`;
-  else $("#syncPill").textContent = "Cache lokalny";
+  if (failed) syncPill.textContent = `Błąd sync: ${failed}`;
+  else if (queued) syncPill.textContent = `W kolejce: ${queued}`;
+  else syncPill.textContent = "Cache lokalny";
 }
 
 function renderTimer(timer) {
@@ -1463,6 +4406,47 @@ function formatTeamName(team) {
 
 function formatRankingTeamName(row) {
   return row.teamNumber ? `${row.teamNumber} - ${row.teamName}` : row.teamName;
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 1 }).format(Number(value || 0));
+}
+
+function formatPercentage(value) {
+  if (value == null || !Number.isFinite(value)) return "—";
+  return `${new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value)}%`;
+}
+
+function getEventConfig() {
+  return {
+    eventName: ui.state?.eventConfig?.eventName || "MISTRZOSTWA POLSKI W KPP",
+    location: ui.state?.eventConfig?.location || "Barczewo",
+    dateFrom: ui.state?.eventConfig?.dateFrom || "2026-06-19",
+    dateTo: ui.state?.eventConfig?.dateTo || "2026-06-22",
+    logo: ui.state?.eventConfig?.logo || "assets/images/logo.jpg"
+  };
+}
+
+function formatEventMeta(eventConfig) {
+  return `${eventConfig.location} | ${formatEventDateRange(eventConfig.dateFrom, eventConfig.dateTo)}`;
+}
+
+function formatEventDateRange(dateFrom, dateTo) {
+  const from = formatEventDatePart(dateFrom);
+  const to = formatEventDatePart(dateTo);
+  if (!from && !to) return "";
+  if (!to || from === to) return from;
+  if (!from) return to;
+  const [fromDay, fromMonth, fromYear] = from.split(".");
+  const [toDay, toMonth, toYear] = to.split(".");
+  if (fromMonth === toMonth && fromYear === toYear) return `${fromDay}–${toDay}.${toMonth}.${toYear}`;
+  return `${from}–${to}`;
+}
+
+function formatEventDatePart(value) {
+  if (!value) return "";
+  const [year, month, day] = String(value).split("-");
+  return year && month && day ? `${day}.${month}.${year}` : String(value);
 }
 
 function normalizeAppMode(value) {

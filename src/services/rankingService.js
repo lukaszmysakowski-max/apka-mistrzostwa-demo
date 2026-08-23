@@ -10,7 +10,8 @@ export class RankingService {
     return buildGeneralRanking({
       competitions: state.competitions,
       teams: state.teams,
-      scoreSheets: state.scoreSheets
+      scoreSheets: state.scoreSheets,
+      cardTemplates: state.cardTemplates
     });
   }
 

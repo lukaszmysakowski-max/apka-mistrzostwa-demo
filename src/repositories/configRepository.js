@@ -26,6 +26,7 @@ function mergeConfig(base, extra) {
     ...base,
     ...extra,
     demoMode: base.demoMode || { enabled: false },
+    eventConfig: { ...(base.eventConfig || {}), ...(extra.eventConfig || {}) },
     events: mergeById(base.events || [], extra.events || []),
     teams: mergeById(base.teams || [], extra.teams || []),
     users: mergeById(base.users || [], extra.users || []),
@@ -36,6 +37,7 @@ function mergeConfig(base, extra) {
     scoreSheets: mergeById(base.scoreSheets || [], extra.scoreSheets || []),
     auditLog: mergeById(base.auditLog || [], extra.auditLog || []),
     syncOperations: mergeById(base.syncOperations || [], extra.syncOperations || []),
+    messages: mergeById(base.messages || [], extra.messages || []),
     appeals: mergeById(base.appeals || [], extra.appeals || [])
   };
 }

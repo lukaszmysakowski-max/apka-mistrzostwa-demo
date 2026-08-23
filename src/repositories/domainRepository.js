@@ -36,6 +36,34 @@ export class DomainRepository {
     return user;
   }
 
+  async upsertTeam(team) {
+    const state = await this.store.load();
+    state.teams = upsertById(state.teams, team);
+    await this.store.save(state);
+    return team;
+  }
+
+  async upsertCompetition(competition) {
+    const state = await this.store.load();
+    state.competitions = upsertById(state.competitions, competition);
+    await this.store.save(state);
+    return competition;
+  }
+
+  async upsertDeviceAssignment(assignment) {
+    const state = await this.store.load();
+    state.deviceAssignments = upsertById(state.deviceAssignments, assignment);
+    await this.store.save(state);
+    return assignment;
+  }
+
+  async updateEventConfig(eventConfig) {
+    const state = await this.store.load();
+    state.eventConfig = { ...(state.eventConfig || {}), ...eventConfig };
+    await this.store.save(state);
+    return state.eventConfig;
+  }
+
   async listScoreSheets() {
     return (await this.store.load()).scoreSheets.filter(item => !item.deletedAt);
   }
@@ -78,6 +106,17 @@ export class DomainRepository {
 
   async listSyncOperations() {
     return (await this.store.load()).syncOperations;
+  }
+
+  async listMessages() {
+    return ((await this.store.load()).messages || []).filter(item => !item.deletedAt);
+  }
+
+  async upsertMessage(message) {
+    const state = await this.store.load();
+    state.messages = upsertById(state.messages || [], message);
+    await this.store.save(state);
+    return message;
   }
 
   async listAppeals() {

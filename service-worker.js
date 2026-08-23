@@ -1,10 +1,10 @@
-const CACHE = "omrm-mvp-client-v34";
+const CACHE = "omrm-mvp-client-v50";
 const ASSETS = [
   "./",
   "./index.html",
   "./demo-standalone.html",
-  "./styles.css?v=users-v34",
-  "./app.js?v=users-v34",
+  "./styles.css?v=users-v50",
+  "./app.js?v=users-v50",
   "./src/utils/id.js",
   "./src/models/cardModel.js",
   "./src/models/rankingModel.js",

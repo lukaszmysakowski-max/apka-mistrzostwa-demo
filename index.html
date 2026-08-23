@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f4f1ea">
   <title>Karty OMRM - MVP klient offline</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=users-v34">
+  <link rel="stylesheet" href="styles.css?v=users-v50">
 </head>
 <body>
   <section id="login-screen" class="login-screen">
@@ -46,20 +46,19 @@
   </section>
 
   <header class="topbar">
-    <div class="admin-brand">
+    <button type="button" class="admin-brand admin-home-button" id="adminHomeButton" aria-label="Przejdź do głównego panelu administratora">
       <div class="admin-brand-logo">
-        <img src="assets/images/logo.jpg" alt="Logo Mistrzostw Polski w KPP" onerror="this.hidden=true">
+        <img id="headerLogo" src="assets/images/logo.jpg" alt="Logo Mistrzostw Polski w KPP" onerror="this.hidden=true">
       </div>
       <div class="admin-brand-text">
-        <strong>MISTRZOSTWA POLSKI W KPP</strong>
-        <span>Barczewo | 19–22.06.2026</span>
-        <span id="deviceLabel" class="device-label">Tablet</span>
+        <strong id="headerEventName">MISTRZOSTWA POLSKI W KPP</strong>
+        <span id="headerEventMeta">Barczewo | 19–22.06.2026</span>
       </div>
-    </div>
+    </button>
+    <button type="button" class="event-edit-button" id="eventEditBtn" aria-label="Edytuj dane zawodów" title="Edytuj dane zawodów">✎</button>
     <div class="session-panel">
       <span class="session-label">Zalogowany jako</span>
       <div class="mode-pill" id="modePill">Tryb</div>
-      <div class="sync-pill" id="syncPill">Ładowanie</div>
     </div>
   </header>
 
@@ -68,14 +67,14 @@
       <div class="admin-layout">
         <aside class="admin-sidebar" aria-label="Menu administratora">
           <nav aria-label="Widoki administratora">
-            <button class="tab active" data-view="users-screen"><span class="nav-icon" aria-hidden="true">U</span>Użytkownicy</button>
-            <button class="tab" type="button"><span class="nav-icon" aria-hidden="true">P</span>Przydziały</button>
-            <button class="tab" type="button"><span class="nav-icon" aria-hidden="true">Z</span>Zespoły</button>
-            <button class="tab" data-view="ranking-screen"><span class="nav-icon" aria-hidden="true">R</span>Ranking</button>
-            <button class="tab" data-view="audit-screen"><span class="nav-icon" aria-hidden="true">A</span>Audyt</button>
-            <button class="tab" data-view="sync-screen"><span class="nav-icon" aria-hidden="true">S</span>Synchronizacja</button>
+            <button class="tab active" data-view="users-screen">Użytkownicy</button>
+            <button class="tab" data-view="assignments-screen">Przydziały</button>
+            <button class="tab" data-view="teams-screen">Zespoły</button>
+            <button class="tab" data-view="ranking-screen">Ranking</button>
+            <button class="tab" data-view="messages-screen">Komunikaty</button>
+            <button class="tab" data-view="sync-screen">Synchronizacja</button>
           </nav>
-          <button type="button" class="logout-button secondary" id="logoutBtn">Wyloguj</button>
+          <button type="button" class="logout-button secondary" id="logoutBtn" data-logout>Wyloguj</button>
         </aside>
 
         <div class="admin-main">
@@ -84,7 +83,30 @@
               <div>
                 <h2>Użytkownicy i uprawnienia</h2>
               </div>
-              <button type="button" id="addUserBtn">+ Dodaj użytkownika</button>
+              <div class="admin-header-actions">
+                <button type="button" id="addUserBtn">+ Dodaj użytkownika</button>
+                <button type="button" class="secondary" id="importUsersBtn">Importuj użytkowników</button>
+              </div>
+            </div>
+
+            <div id="importUsersPanel" class="user-form-panel import-users-panel" hidden>
+              <h3>Importuj użytkowników</h3>
+              <p class="muted">Wybierz plik XLSX lub CSV z kolumnami: Imię oraz Nazwisko. Loginy zostaną wygenerowane automatycznie.</p>
+              <label>
+                Plik Excel / CSV
+                <input id="importUsersFileInput" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+              </label>
+              <div id="importUsersFileInfo" class="import-file-info" hidden></div>
+              <div class="import-columns">
+                <strong>Oczekiwane kolumny:</strong>
+                <span>Imię</span>
+                <span>Nazwisko</span>
+              </div>
+              <div id="importUsersPreview"></div>
+              <div class="action-row">
+                <button type="button" class="secondary" id="cancelImportUsersBtn">Zamknij</button>
+                <button type="button" id="confirmImportUsersBtn" hidden>Importuj 0 użytkowników</button>
+              </div>
             </div>
 
             <div id="userFormPanel" class="user-form-panel" hidden>
@@ -191,6 +213,50 @@
             <div class="table-footer">
               <strong>Razem użytkowników: <span id="usersCount">0</span></strong>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="assignments-screen" class="view">
+      <div class="admin-layout">
+        <aside class="admin-sidebar" aria-label="Menu administratora">
+          <nav aria-label="Widoki administratora">
+            <button class="tab" data-view="users-screen">Użytkownicy</button>
+            <button class="tab active" data-view="assignments-screen">Przydziały</button>
+            <button class="tab" data-view="teams-screen">Zespoły</button>
+            <button class="tab" data-view="ranking-screen">Ranking</button>
+            <button class="tab" data-view="messages-screen">Komunikaty</button>
+            <button class="tab" data-view="sync-screen">Synchronizacja</button>
+          </nav>
+          <button type="button" class="logout-button secondary" data-logout>Wyloguj</button>
+        </aside>
+
+        <div class="admin-main">
+          <div class="wide-panel admin-users-panel assignments-panel">
+            <div id="assignmentsContent"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="teams-screen" class="view">
+      <div class="admin-layout">
+        <aside class="admin-sidebar" aria-label="Menu administratora">
+          <nav aria-label="Widoki administratora">
+            <button class="tab" data-view="users-screen">Użytkownicy</button>
+            <button class="tab" data-view="assignments-screen">Przydziały</button>
+            <button class="tab active" data-view="teams-screen">Zespoły</button>
+            <button class="tab" data-view="ranking-screen">Ranking</button>
+            <button class="tab" data-view="messages-screen">Komunikaty</button>
+            <button class="tab" data-view="sync-screen">Synchronizacja</button>
+          </nav>
+          <button type="button" class="logout-button secondary" data-logout>Wyloguj</button>
+        </aside>
+
+        <div class="admin-main">
+          <div class="wide-panel admin-users-panel teams-panel">
+            <div id="teamsContent"></div>
           </div>
         </div>
       </div>
@@ -311,13 +377,36 @@
     </section>
 
     <section id="ranking-screen" class="view">
-      <div class="wide-panel">
-        <h2>Klasyfikacja generalna</h2>
-        <p class="muted">Ranking powstaje wyłącznie z zatwierdzonych i zapisanych wyników. Brak sztucznie generowanych wyników cząstkowych.</p>
-        <table>
-          <thead><tr><th>Miejsce</th><th>Zespół</th><th>Ukończone konkurencje</th><th>Suma</th></tr></thead>
-          <tbody id="rankingBody"></tbody>
-        </table>
+      <div class="admin-layout">
+        <aside class="admin-sidebar" aria-label="Menu administratora">
+          <nav aria-label="Widoki administratora">
+            <button class="tab" data-view="users-screen">Użytkownicy</button>
+            <button class="tab" data-view="assignments-screen">Przydziały</button>
+            <button class="tab" data-view="teams-screen">Zespoły</button>
+            <button class="tab active" data-view="ranking-screen">Ranking</button>
+            <button class="tab" data-view="messages-screen">Komunikaty</button>
+            <button class="tab" data-view="sync-screen">Synchronizacja</button>
+          </nav>
+          <button type="button" class="logout-button secondary" data-logout>Wyloguj</button>
+        </aside>
+
+        <div class="admin-main">
+          <div class="wide-panel admin-users-panel ranking-panel">
+            <div class="admin-section-header ranking-header">
+              <h2>Ranking na żywo</h2>
+              <span id="rankingUpdatedAt" class="ranking-updated">Ostatnia aktualizacja: —</span>
+            </div>
+            <div class="table-shell ranking-table-shell">
+              <table class="users-table ranking-table">
+                <thead><tr><th>Miejsce</th><th>Nr zespołu</th><th>Nazwa zespołu</th><th>Suma punktów</th><th>Procent</th></tr></thead>
+                <tbody id="rankingBody"></tbody>
+              </table>
+            </div>
+            <div class="action-row ranking-actions">
+              <button type="button" id="refreshRankingBtn">Aktualizuj</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -331,15 +420,54 @@
       </div>
     </section>
 
+    <section id="messages-screen" class="view">
+      <div class="admin-layout">
+        <aside class="admin-sidebar" aria-label="Menu administratora">
+          <nav aria-label="Widoki administratora">
+            <button class="tab" data-view="users-screen">Użytkownicy</button>
+            <button class="tab" data-view="assignments-screen">Przydziały</button>
+            <button class="tab" data-view="teams-screen">Zespoły</button>
+            <button class="tab" data-view="ranking-screen">Ranking</button>
+            <button class="tab active" data-view="messages-screen">Komunikaty</button>
+            <button class="tab" data-view="sync-screen">Synchronizacja</button>
+          </nav>
+          <button type="button" class="logout-button secondary" data-logout>Wyloguj</button>
+        </aside>
+
+        <div class="admin-main">
+          <div class="wide-panel admin-users-panel messages-panel">
+            <div id="messagesContent"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="sync-screen" class="view">
-      <div class="wide-panel">
-        <h2>Kolejka synchronizacji</h2>
-        <p class="muted">Operacje są idempotentne dzięki `client_operation_id` i gotowe do wysłania do backendu.</p>
-        <button id="syncNowBtn">Synchronizuj teraz</button>
-        <table>
-          <thead><tr><th>Status</th><th>Typ</th><th>Encja</th><th>Wersja</th><th>Próby</th><th>Client operation ID</th></tr></thead>
-          <tbody id="syncBody"></tbody>
-        </table>
+      <div class="admin-layout">
+        <aside class="admin-sidebar" aria-label="Menu administratora">
+          <nav aria-label="Widoki administratora">
+            <button class="tab" data-view="users-screen">Użytkownicy</button>
+            <button class="tab" data-view="assignments-screen">Przydziały</button>
+            <button class="tab" data-view="teams-screen">Zespoły</button>
+            <button class="tab" data-view="ranking-screen">Ranking</button>
+            <button class="tab" data-view="messages-screen">Komunikaty</button>
+            <button class="tab active" data-view="sync-screen">Synchronizacja</button>
+          </nav>
+          <button type="button" class="logout-button secondary" data-logout>Wyloguj</button>
+        </aside>
+
+        <div class="admin-main">
+          <div class="wide-panel admin-users-panel sync-panel">
+            <div class="admin-section-header assignments-header">
+              <div>
+                <h2>Synchronizacja</h2>
+                <p class="muted">Podgląd stanu lokalnego cache i kolejki operacji.</p>
+              </div>
+              <button id="syncNowBtn">Uruchom synchronizację</button>
+            </div>
+            <div id="syncDashboard"></div>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -361,6 +489,37 @@
     </form>
   </dialog>
 
-  <script type="module" src="app.js?v=users-v34"></script>
+  <dialog id="eventConfigDialog" class="confirm-dialog event-config-dialog">
+    <form id="eventConfigForm">
+      <h3>Dane zawodów</h3>
+      <label>
+        Nazwa zawodów
+        <input id="eventNameInput" required>
+      </label>
+      <label>
+        Miejsce
+        <input id="eventLocationInput" required>
+      </label>
+      <div class="form-grid">
+        <label>
+          Data rozpoczęcia
+          <input id="eventDateFromInput" type="date" required>
+        </label>
+        <label>
+          Data zakończenia
+          <input id="eventDateToInput" type="date" required>
+        </label>
+      </div>
+      <div id="eventConfigError" class="login-error" role="alert" hidden></div>
+      <div class="dialog-actions">
+        <button type="button" class="secondary" id="eventConfigCancelBtn">Anuluj</button>
+        <button type="submit" id="eventConfigSaveBtn">Zapisz</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="appNotice" class="app-notice" role="status" hidden></div>
+
+  <script type="module" src="app.js?v=users-v50"></script>
 </body>
 </html>

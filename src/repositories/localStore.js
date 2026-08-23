@@ -2,6 +2,7 @@ const STORAGE_KEY = "omrm-mvp-local-cache-v1";
 
 const emptyStore = {
   meta: { schemaVersion: 1 },
+  eventConfig: null,
   device: null,
   currentUser: null,
   events: [],
@@ -15,6 +16,7 @@ const emptyStore = {
   scoreSheets: [],
   auditLog: [],
   syncOperations: [],
+  messages: [],
   appeals: []
 };
 
@@ -40,11 +42,12 @@ export class LocalStore {
     const next = {
       ...current,
       meta: { ...current.meta, schemaVersion: 1, demoMode: Boolean(bootstrap.demoMode?.enabled), bootstrapSignature },
+      eventConfig: { ...(bootstrap.eventConfig || {}), ...(current.eventConfig || {}) },
       device: bootstrap.device,
       currentUser: bootstrap.currentUser,
       events: mergeById(current.events, bootstrap.events || []),
-      teams: mergeById(current.teams, bootstrap.teams || []),
-      users: mergeById(current.users, bootstrap.users || []),
+      teams: cleanDemoStart ? clone(bootstrap.teams || []) : mergeById(current.teams, bootstrap.teams || []),
+      users: mergeUsers(current.users, bootstrap.users || []),
       roles: mergeById(current.roles, bootstrap.roles || []),
       permissions: mergeById(current.permissions, bootstrap.permissions || []),
       competitions: mergeById(current.competitions, bootstrap.competitions || []),
@@ -53,6 +56,7 @@ export class LocalStore {
       scoreSheets: cleanDemoStart ? [] : mergeById(current.scoreSheets, bootstrap.scoreSheets || []),
       auditLog: mergeById(current.auditLog, bootstrap.auditLog || []),
       syncOperations: mergeById(current.syncOperations, bootstrap.syncOperations || []),
+      messages: mergeById(current.messages, bootstrap.messages || []),
       appeals: mergeById(current.appeals, bootstrap.appeals || [])
     };
     await this.save(next);
@@ -64,6 +68,43 @@ function mergeById(existing, incoming) {
   const map = new Map(existing.map(item => [item.id, item]));
   for (const item of incoming) map.set(item.id, { ...map.get(item.id), ...item });
   return [...map.values()];
+}
+
+function mergeUsers(existing, incoming) {
+  const map = new Map();
+  const incomingNameKeys = new Set((incoming || []).map(getUserNameKey).filter(Boolean));
+  for (const user of existing || []) {
+    const key = getUserMergeKey(user, incomingNameKeys);
+    if (key) map.set(key, user);
+  }
+  for (const user of incoming || []) {
+    const key = getUserMergeKey(user, incomingNameKeys);
+    if (key) {
+      const previous = map.get(key);
+      map.set(key, { ...previous, ...user, id: user.id || previous?.id });
+    }
+  }
+  return [...map.values()];
+}
+
+function getUserMergeKey(user, incomingNameKeys = new Set()) {
+  const nameKey = getUserNameKey(user);
+  if (nameKey && incomingNameKeys.has(nameKey)) return `name:${nameKey}`;
+  return user?.login ? `login:${String(user.login).trim().toLowerCase()}` : user?.id ? `id:${user.id}` : "";
+}
+
+function getUserNameKey(user) {
+  const firstName = String(user?.firstName || "").trim();
+  const lastName = String(user?.lastName || "").trim();
+  const fullName = firstName || lastName
+    ? `${firstName} ${lastName}`
+    : String(user?.displayName || "").trim();
+  return fullName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function createBootstrapSignature(bootstrap) {
