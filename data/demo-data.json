@@ -565,6 +565,57 @@
       ],
       "deletedAt": null,
       "deletedBy": null
+    },
+    {
+      "id": "competition-test",
+      "eventId": "event-demo-2026",
+      "competitionNumber": "99",
+      "name": "Konkurencja test",
+      "code": "KONKURENCJA_TEST",
+      "rankingOrder": 99,
+      "minJudges": 1,
+      "isDemo": true,
+      "equipmentChecklist": [],
+      "timer": {
+        "durationSeconds": 600,
+        "warningThresholdSeconds": 120
+      },
+      "parts": [
+        {
+          "id": "competition-part-test-a",
+          "name": "Karta A",
+          "code": "A",
+          "cardTemplateId": "card-template-konkurencja-test-a-2026",
+          "weight": 1,
+          "isDemo": true
+        },
+        {
+          "id": "competition-part-test-b",
+          "name": "Karta B",
+          "code": "B",
+          "cardTemplateId": "card-template-konkurencja-test-b-2026",
+          "weight": 1,
+          "isDemo": true
+        },
+        {
+          "id": "competition-part-test-c",
+          "name": "Karta C",
+          "code": "C",
+          "cardTemplateId": "card-template-konkurencja-test-c-2026",
+          "weight": 1,
+          "isDemo": true
+        },
+        {
+          "id": "competition-part-test-d",
+          "name": "Karta D",
+          "code": "D",
+          "cardTemplateId": "card-template-konkurencja-test-d-2026",
+          "weight": 1,
+          "isDemo": true
+        }
+      ],
+      "deletedAt": null,
+      "deletedBy": null
     }
   ],
   "cardTemplates": [
@@ -574,7 +625,11 @@
     "card-template-szybcy-a-2026.json",
     "card-template-szybcy-b-2026.json",
     "card-template-kill-bill-2026.json",
-    "card-template-trainspotting-2026.json"
+    "card-template-trainspotting-2026.json",
+    "card-template-konkurencja-test-a-2026.json",
+    "card-template-konkurencja-test-b-2026.json",
+    "card-template-konkurencja-test-c-2026.json",
+    "card-template-konkurencja-test-d-2026.json"
   ],
   "deviceAssignments": [
     {

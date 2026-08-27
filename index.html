@@ -76,6 +76,7 @@
             <button class="tab" data-view="teams-screen">Zespoły</button>
             <button class="tab" data-view="ranking-screen">Ranking</button>
             <button class="tab" data-view="messages-screen">Komunikaty</button>
+            <button class="tab" data-view="audit-screen">Audyt</button>
             <button class="tab" data-view="sync-screen">Synchronizacja</button>
           </nav>
           <button type="button" class="logout-button secondary" id="logoutBtn" data-logout>Wyloguj</button>
@@ -231,6 +232,7 @@
             <button class="tab" data-view="teams-screen">Zespoły</button>
             <button class="tab" data-view="ranking-screen">Ranking</button>
             <button class="tab" data-view="messages-screen">Komunikaty</button>
+            <button class="tab" data-view="audit-screen">Audyt</button>
             <button class="tab" data-view="sync-screen">Synchronizacja</button>
           </nav>
           <button type="button" class="logout-button secondary" data-logout>Wyloguj</button>
@@ -253,6 +255,7 @@
             <button class="tab active" data-view="teams-screen">Zespoły</button>
             <button class="tab" data-view="ranking-screen">Ranking</button>
             <button class="tab" data-view="messages-screen">Komunikaty</button>
+            <button class="tab" data-view="audit-screen">Audyt</button>
             <button class="tab" data-view="sync-screen">Synchronizacja</button>
           </nav>
           <button type="button" class="logout-button secondary" data-logout>Wyloguj</button>
@@ -389,6 +392,7 @@
             <button class="tab" data-view="teams-screen">Zespoły</button>
             <button class="tab active" data-view="ranking-screen">Ranking</button>
             <button class="tab" data-view="messages-screen">Komunikaty</button>
+            <button class="tab" data-view="audit-screen">Audyt</button>
             <button class="tab" data-view="sync-screen">Synchronizacja</button>
           </nav>
           <button type="button" class="logout-button secondary" data-logout>Wyloguj</button>
@@ -397,17 +401,24 @@
         <div class="admin-main">
           <div class="wide-panel admin-users-panel ranking-panel">
             <div class="admin-section-header ranking-header">
-              <h2>Ranking na żywo</h2>
+              <div>
+                <h2>Ranking</h2>
+                <p class="muted">Klasyfikacja generalna i punkty z poszczególnych konkurencji.</p>
+              </div>
               <span id="rankingUpdatedAt" class="ranking-updated">Ostatnia aktualizacja: —</span>
             </div>
-            <div class="table-shell ranking-table-shell">
-              <table class="users-table ranking-table">
-                <thead><tr><th>Miejsce</th><th>Nr zespołu</th><th>Nazwa zespołu</th><th>Suma punktów</th><th>Procent</th></tr></thead>
-                <tbody id="rankingBody"></tbody>
-              </table>
+            <div id="rankingTabs" class="message-tabs ranking-tabs" role="tablist" aria-label="Widoki rankingu">
+              <button type="button" class="secondary compact-button active" data-ranking-view="general">Ranking na żywo</button>
+              <button type="button" class="secondary compact-button" data-ranking-view="competition-points">Punkty konkurencji</button>
             </div>
+            <div id="rankingSortBar" class="ranking-sort-bar" hidden>
+              <span>Sortowanie: <strong id="rankingSortLabel">—</strong></span>
+              <button type="button" class="secondary compact-button" id="clearRankingSortBtn">Usuń sortowanie</button>
+            </div>
+            <div id="rankingContent"></div>
             <div class="action-row ranking-actions">
               <button type="button" id="refreshRankingBtn">Aktualizuj</button>
+              <button type="button" class="secondary" id="exportCompetitionPointsBtn" hidden>Eksportuj do Excel</button>
             </div>
           </div>
         </div>
@@ -415,12 +426,25 @@
     </section>
 
     <section id="audit-screen" class="view">
-      <div class="wide-panel">
-        <h2>Dziennik aktywności i zmian</h2>
-        <table>
-          <thead><tr><th>Czas</th><th>Akcja</th><th>Encja</th><th>Pole</th><th>Poprzednio</th><th>Nowo</th><th>Wersja</th></tr></thead>
-          <tbody id="auditBody"></tbody>
-        </table>
+      <div class="admin-layout">
+        <aside class="admin-sidebar" aria-label="Menu administratora">
+          <nav aria-label="Widoki administratora">
+            <button class="tab" data-view="users-screen">Użytkownicy</button>
+            <button class="tab" data-view="assignments-screen">Przydziały</button>
+            <button class="tab" data-view="teams-screen">Zespoły</button>
+            <button class="tab" data-view="ranking-screen">Ranking</button>
+            <button class="tab" data-view="messages-screen">Komunikaty</button>
+            <button class="tab active" data-view="audit-screen">Audyt</button>
+            <button class="tab" data-view="sync-screen">Synchronizacja</button>
+          </nav>
+          <button type="button" class="logout-button secondary" data-logout>Wyloguj</button>
+        </aside>
+
+        <div class="admin-main">
+          <div class="wide-panel admin-users-panel audit-panel">
+            <div id="auditContent"></div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -433,6 +457,7 @@
             <button class="tab" data-view="teams-screen">Zespoły</button>
             <button class="tab" data-view="ranking-screen">Ranking</button>
             <button class="tab active" data-view="messages-screen">Komunikaty</button>
+            <button class="tab" data-view="audit-screen">Audyt</button>
             <button class="tab" data-view="sync-screen">Synchronizacja</button>
           </nav>
           <button type="button" class="logout-button secondary" data-logout>Wyloguj</button>
@@ -455,6 +480,7 @@
             <button class="tab" data-view="teams-screen">Zespoły</button>
             <button class="tab" data-view="ranking-screen">Ranking</button>
             <button class="tab" data-view="messages-screen">Komunikaty</button>
+            <button class="tab" data-view="audit-screen">Audyt</button>
             <button class="tab active" data-view="sync-screen">Synchronizacja</button>
           </nav>
           <button type="button" class="logout-button secondary" data-logout>Wyloguj</button>

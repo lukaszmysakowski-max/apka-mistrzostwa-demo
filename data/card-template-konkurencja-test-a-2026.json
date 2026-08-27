@@ -1,0 +1,43 @@
+{
+  "id": "card-template-konkurencja-test-a-2026",
+  "schemaVersion": 2,
+  "competitionId": "competition-test",
+  "competitionPartId": "competition-part-test-a",
+  "name": "KONKURENCJA TEST - KARTA A",
+  "version": 1,
+  "status": "published",
+  "isDemo": true,
+  "maxPoints": 25,
+  "scoringMode": "yes_no_points",
+  "deletedAt": null,
+  "deletedBy": null,
+  "layout": {
+    "mode": "paper_like",
+    "paper": "A4-landscape-scaled",
+    "columns": [
+      { "id": "criterion", "label": "", "width": "auto" },
+      { "id": "yes", "label": "tak", "width": 72 },
+      { "id": "no", "label": "nie", "width": 72 },
+      { "id": "points", "label": "pkt", "width": 64 }
+    ],
+    "notes": [
+      "Karta demonstracyjna do testowania rankingu wielokartowego."
+    ]
+  },
+  "sections": [
+    {
+      "id": "test_a",
+      "title": "KARTA A",
+      "group": "demo.test",
+      "sectionWeight": 1,
+      "visibilityConditions": [],
+      "items": [
+        { "id": "test_a_1", "label": "Element testowy A1", "type": "yes_no", "points": 10, "required": true, "commentAllowed": true, "group": "demo.test", "visibilityConditions": [], "validationRules": [{ "type": "required" }] },
+        { "id": "test_a_2", "label": "Element testowy A2", "type": "yes_no", "points": 15, "required": true, "commentAllowed": true, "group": "demo.test", "visibilityConditions": [], "validationRules": [{ "type": "required" }] }
+      ]
+    }
+  ],
+  "validationRules": [
+    { "type": "maxScore", "value": 25, "message": "Przekroczono maksymalną liczbę punktów." }
+  ]
+}

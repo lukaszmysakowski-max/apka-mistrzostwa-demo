@@ -46,7 +46,10 @@ const ui = {
   teamNumberDrafts: {},
   invalidTeamNumberIds: new Set(),
   rankingLastUpdatedAt: null,
+  rankingView: "general",
+  rankingSortCompetitionId: null,
   messagesView: "all",
+  auditView: "devices",
   messageComposerOpen: false,
   messageUnconfirmedId: null,
   editingChecklistItemId: null,
@@ -134,6 +137,9 @@ function bindEvents() {
   $("#confirmCancelBtn").addEventListener("click", closeConfirmDialog);
   $("#confirmAcceptBtn").addEventListener("click", acceptConfirmDialog);
   $("#refreshRankingBtn").addEventListener("click", renderRanking);
+  $("#rankingTabs").addEventListener("click", handleRankingClick);
+  $("#clearRankingSortBtn").addEventListener("click", clearRankingSort);
+  $("#exportCompetitionPointsBtn").addEventListener("click", exportCompetitionPoints);
   $("#assignmentsContent").addEventListener("click", handleAssignmentsClick);
   $("#assignmentsContent").addEventListener("change", handleAssignmentsChange);
   $("#assignmentsContent").addEventListener("dragstart", handleAssignmentDragStart);
@@ -147,6 +153,7 @@ function bindEvents() {
   $("#messagesContent").addEventListener("click", handleMessagesClick);
   $("#messagesContent").addEventListener("submit", handleMessagesSubmit);
   $("#messagesContent").addEventListener("change", handleMessagesChange);
+  $("#auditContent").addEventListener("click", handleAuditClick);
   $("#syncDashboard").addEventListener("click", handleSyncDashboardClick);
 
   document.querySelectorAll(".tab[data-view]").forEach(button => {
@@ -465,6 +472,7 @@ function showView(id) {
   if (id === "assignments-screen") renderAdminAssignments();
   if (id === "teams-screen") renderAdminTeams();
   if (id === "ranking-screen") renderRanking();
+  if (id === "audit-screen") renderAudit();
   if (id === "messages-screen") renderMessages();
   if (id === "sync-screen") renderSyncDashboard();
   window.scrollTo(0, 0);
@@ -480,6 +488,7 @@ async function navigateToView(id) {
   if (id === "teams-screen") resetTeamsHome();
   if (id === "users-screen") resetUsersHome();
   if (id === "messages-screen") resetMessagesHome();
+  if (id === "audit-screen") resetAuditHome();
   if (id === "sync-screen") resetSyncHome();
   closeAdminMenu();
   showView(id);
@@ -3836,37 +3845,590 @@ async function trySync() {
 
 async function renderRanking() {
   ui.state = await repository.getState();
-  const rows = await rankingService.getGeneralRanking();
+  const generalRows = await rankingService.getGeneralRanking();
   ui.rankingLastUpdatedAt = new Date();
   $("#rankingUpdatedAt").textContent = `Ostatnia aktualizacja: ${formatDate(ui.rankingLastUpdatedAt.toISOString())}`;
-  $("#rankingBody").innerHTML = rows.length
-    ? rows.map((row, index) => `
-      <tr>
-        <td><strong>${row.place || "—"}</strong></td>
-        <td>${escapeHtml(row.teamNumber || "")}</td>
-        <td>${escapeHtml(row.teamName)}</td>
-        <td><b>${formatNumber(row.total)}</b></td>
-        <td>${formatPercentage(row.percentage)}</td>
-      </tr>
-    `).join("")
-    : `<tr><td colspan="5">Brak zatwierdzonych wyników.</td></tr>`;
+  document.querySelectorAll("[data-ranking-view]").forEach(button => {
+    button.classList.toggle("active", button.dataset.rankingView === ui.rankingView);
+  });
+  $("#exportCompetitionPointsBtn").hidden = ui.rankingView !== "competition-points";
+  if (ui.rankingView === "competition-points") {
+    renderCompetitionPointsRanking(generalRows);
+    return;
+  }
+  $("#rankingSortBar").hidden = true;
+  $("#rankingContent").innerHTML = `
+    <div class="table-shell ranking-table-shell">
+      <table class="users-table ranking-table">
+        <thead><tr><th>Miejsce</th><th>Nr zespołu</th><th>Nazwa zespołu</th><th>Suma punktów</th><th>Procent</th></tr></thead>
+        <tbody>
+          ${generalRows.length ? generalRows.map(row => `
+            <tr>
+              <td><strong>${row.place || "—"}</strong></td>
+              <td>${escapeHtml(row.teamNumber || "")}</td>
+              <td>${escapeHtml(row.teamName)}</td>
+              <td><b>${formatNumber(row.total)}</b></td>
+              <td>${formatPercentage(row.percentage)}</td>
+            </tr>
+          `).join("") : `<tr><td colspan="5">Brak zatwierdzonych wyników.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function handleRankingClick(event) {
+  const viewButton = event.target.closest("[data-ranking-view]");
+  if (viewButton) {
+    ui.rankingView = viewButton.dataset.rankingView;
+    if (ui.rankingView !== "competition-points") ui.rankingSortCompetitionId = null;
+    renderRanking();
+    return;
+  }
+  const sortButton = event.target.closest("[data-ranking-sort-competition]");
+  if (sortButton) {
+    ui.rankingSortCompetitionId = sortButton.dataset.rankingSortCompetition;
+    renderRanking();
+  }
+}
+
+function renderCompetitionPointsRanking(generalRows) {
+  const matrix = buildCompetitionPointsMatrix(generalRows);
+  const sortedRows = getSortedCompetitionPointRows(matrix);
+  const sortedCompetition = matrix.competitions.find(competition => competition.id === ui.rankingSortCompetitionId);
+  $("#rankingSortBar").hidden = !sortedCompetition;
+  $("#rankingSortLabel").textContent = sortedCompetition
+    ? `Konkurencja ${getCompetitionNumber(sortedCompetition)}`
+    : "—";
+  $("#rankingContent").innerHTML = `
+    <div class="table-shell competition-points-shell">
+      <table class="users-table competition-points-table">
+        <thead>
+          <tr>
+            <th class="sticky-col sticky-place" rowspan="2">Miejsce</th>
+            <th class="sticky-col sticky-number" rowspan="2">Nr zespołu</th>
+            <th class="sticky-col sticky-team" rowspan="2">Nazwa zespołu</th>
+            ${matrix.competitions.map(competition => renderCompetitionPointsCompetitionHeader(competition)).join("")}
+          </tr>
+          <tr>
+            ${matrix.competitions.map(renderCompetitionPointsPartsHeader).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${sortedRows.length ? sortedRows.map((row, index) => renderCompetitionPointsRow(row, index, matrix.competitions)).join("") : `<tr><td colspan="3">Brak zespołów.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function buildCompetitionPointsMatrix(generalRows) {
+  const competitions = getAssignableCompetitions().map(competition => ({
+    ...competition,
+    parts: (competition.parts || []).map((part, index) => ({
+      ...part,
+      displayLabel: getCompetitionPartLabel(part, index)
+    }))
+  }));
+  const approvedSheets = (ui.state.scoreSheets || []).filter(sheet =>
+    !sheet.deletedAt &&
+    sheet.status === "approved" &&
+    sheet.approvedAt &&
+    sheet.finalScore != null
+  );
+  const scoreByKey = new Map(approvedSheets.map(sheet => [
+    createScoreKey(sheet.teamId, sheet.competitionId, sheet.competitionPartId),
+    Number(sheet.finalScore || 0)
+  ]));
+  const generalOrder = new Map(generalRows.map((row, index) => [row.teamId, index]));
+  const rows = getAdminTeams().map(team => {
+    const competitionTotals = new Map();
+    const partScores = new Map();
+    for (const competition of competitions) {
+      let total = 0;
+      let hasAnyScore = false;
+      for (const part of competition.parts || []) {
+        const score = scoreByKey.get(createScoreKey(team.id, competition.id, part.id));
+        partScores.set(createScoreKey(team.id, competition.id, part.id), score ?? null);
+        if (score != null) {
+          total += Number(score);
+          hasAnyScore = true;
+        }
+      }
+      competitionTotals.set(competition.id, hasAnyScore ? total : null);
+    }
+    return {
+      team,
+      generalOrder: generalOrder.get(team.id) ?? Number.MAX_SAFE_INTEGER,
+      partScores,
+      competitionTotals
+    };
+  });
+  return { competitions, rows };
+}
+
+function getSortedCompetitionPointRows(matrix) {
+  const rows = [...matrix.rows];
+  if (!ui.rankingSortCompetitionId) {
+    return rows.sort((a, b) => a.generalOrder - b.generalOrder || a.team.name.localeCompare(b.team.name, "pl"));
+  }
+  return rows.sort((a, b) => {
+    const left = a.competitionTotals.get(ui.rankingSortCompetitionId);
+    const right = b.competitionTotals.get(ui.rankingSortCompetitionId);
+    if (left != null && right == null) return -1;
+    if (left == null && right != null) return 1;
+    if (left != null && right != null) return right - left || a.generalOrder - b.generalOrder;
+    return a.generalOrder - b.generalOrder || a.team.name.localeCompare(b.team.name, "pl");
+  });
+}
+
+function renderCompetitionPointsCompetitionHeader(competition) {
+  const number = getCompetitionNumber(competition) || "—";
+  const active = ui.rankingSortCompetitionId === competition.id;
+  const colspan = Math.max((competition.parts || []).length, 1);
+  const rowspan = colspan === 1 ? ` rowspan="2"` : "";
+  return `
+    <th class="competition-points-competition-head${active ? " active-sort" : ""}" colspan="${colspan}"${rowspan}>
+      <button type="button" data-ranking-sort-competition="${escapeHtml(competition.id)}" title="Sortuj po konkurencji ${escapeHtml(number)}">
+        ${escapeHtml(number)}${active ? " ↓" : ""}
+      </button>
+    </th>
+  `;
+}
+
+function renderCompetitionPointsPartsHeader(competition) {
+  const parts = competition.parts || [];
+  if (parts.length <= 1) return "";
+  return parts.map(part => `<th class="competition-points-part-head">${escapeHtml(part.displayLabel)}</th>`).join("");
+}
+
+function renderCompetitionPointsRow(row, index, competitions) {
+  return `
+    <tr>
+      <td class="sticky-col sticky-place"><strong>${index + 1}</strong></td>
+      <td class="sticky-col sticky-number">${escapeHtml(row.team.number || "")}</td>
+      <td class="sticky-col sticky-team"><strong>${escapeHtml(row.team.name)}</strong></td>
+      ${competitions.map(competition => renderCompetitionPointsCells(row, competition)).join("")}
+    </tr>
+  `;
+}
+
+function renderCompetitionPointsCells(row, competition) {
+  const parts = competition.parts || [];
+  if (parts.length <= 1) {
+    const part = parts[0];
+    const score = part ? row.partScores.get(createScoreKey(row.team.id, competition.id, part.id)) : null;
+    return `<td class="score-cell">${formatScoreCell(score)}</td>`;
+  }
+  return parts.map(part => {
+    const score = row.partScores.get(createScoreKey(row.team.id, competition.id, part.id));
+    return `<td class="score-cell">${formatScoreCell(score)}</td>`;
+  }).join("");
+}
+
+function clearRankingSort() {
+  ui.rankingSortCompetitionId = null;
+  renderRanking();
+}
+
+function exportCompetitionPoints() {
+  const matrix = buildCompetitionPointsMatrixForExport();
+  const html = buildCompetitionPointsExportHtml(matrix);
+  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `punkty-konkurencji-${new Date().toISOString().slice(0, 10)}.xls`;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function buildCompetitionPointsMatrixForExport() {
+  const generalRows = buildGeneralRankingForCurrentState();
+  const matrix = buildCompetitionPointsMatrix(generalRows);
+  return { ...matrix, rows: getSortedCompetitionPointRows(matrix) };
+}
+
+function buildGeneralRankingForCurrentState() {
+  const approvedSheets = (ui.state.scoreSheets || []).filter(sheet => sheet.status === "approved" && sheet.approvedAt && !sheet.deletedAt && sheet.finalScore != null);
+  const rows = getAdminTeams().map(team => {
+    const total = approvedSheets
+      .filter(sheet => sheet.teamId === team.id)
+      .reduce((sum, sheet) => sum + Number(sheet.finalScore || 0), 0);
+    const approvedCount = approvedSheets.filter(sheet => sheet.teamId === team.id).length;
+    return { teamId: team.id, teamName: team.name, total, approvedSheets: approvedCount };
+  });
+  return rows.sort((a, b) => {
+    if (a.approvedSheets > 0 && b.approvedSheets === 0) return -1;
+    if (a.approvedSheets === 0 && b.approvedSheets > 0) return 1;
+    if (a.approvedSheets > 0 && b.approvedSheets > 0) return b.total - a.total || a.teamName.localeCompare(b.teamName, "pl");
+    return a.teamName.localeCompare(b.teamName, "pl");
+  });
+}
+
+function buildCompetitionPointsExportHtml(matrix) {
+  const headerTop = `
+    <tr>
+      <th rowspan="2">Miejsce</th><th rowspan="2">Nr zespołu</th><th rowspan="2">Nazwa zespołu</th>
+      ${matrix.competitions.map(competition => `<th colspan="${Math.max((competition.parts || []).length, 1)}">Konkurencja ${escapeHtml(getCompetitionNumber(competition) || "—")}</th>`).join("")}
+    </tr>`;
+  const headerBottom = `
+    <tr>
+      ${matrix.competitions.map(competition => {
+        const parts = competition.parts || [];
+        if (parts.length <= 1) return `<th></th>`;
+        return parts.map(part => `<th>${escapeHtml(part.displayLabel)}</th>`).join("");
+      }).join("")}
+    </tr>`;
+  const body = matrix.rows.map((row, index) => `
+    <tr>
+      <td>${index + 1}</td><td>${escapeHtml(row.team.number || "")}</td><td>${escapeHtml(row.team.name)}</td>
+      ${matrix.competitions.map(competition => renderCompetitionPointsExportCells(row, competition)).join("")}
+    </tr>
+  `).join("");
+  return `<!doctype html><html><head><meta charset="utf-8"></head><body><table border="1">${headerTop}${headerBottom}${body}</table></body></html>`;
+}
+
+function renderCompetitionPointsExportCells(row, competition) {
+  const parts = competition.parts || [];
+  if (parts.length <= 1) {
+    const part = parts[0];
+    const score = part ? row.partScores.get(createScoreKey(row.team.id, competition.id, part.id)) : null;
+    return `<td>${score ?? ""}</td>`;
+  }
+  return parts.map(part => `<td>${row.partScores.get(createScoreKey(row.team.id, competition.id, part.id)) ?? ""}</td>`).join("");
+}
+
+function getCompetitionPartLabel(part, index) {
+  const source = `${part?.name || ""} ${part?.code || ""}`.trim();
+  const match = source.match(/(?:^|\s|[-_])([A-Z])(?:\s*)$/i);
+  return (match?.[1] || String.fromCharCode(65 + index)).toUpperCase();
+}
+
+function createScoreKey(teamId, competitionId, partId) {
+  return `${teamId}:${competitionId}:${partId}`;
+}
+
+function formatScoreCell(score) {
+  return score == null ? "—" : formatNumber(score);
 }
 
 async function renderAudit() {
-  const audit = await repository.listAudit();
-  $("#auditBody").innerHTML = audit.length
-    ? audit.map(entry => `
-      <tr>
-        <td>${formatDate(entry.occurredAt)}</td>
-        <td>${escapeHtml(entry.action)}</td>
-        <td>${escapeHtml(entry.entity)}<br><small>${escapeHtml(entry.entityId)}</small></td>
-        <td>${escapeHtml(entry.fieldId || "")}</td>
-        <td>${escapeHtml(formatValue(entry.previousValue))}</td>
-        <td>${escapeHtml(formatValue(entry.newValue))}</td>
-        <td>${entry.entityVersion ?? ""}</td>
-      </tr>
-    `).join("")
-    : `<tr><td colspan="7">Brak wpisów audytu.</td></tr>`;
+  const container = $("#auditContent");
+  if (!container) return;
+  ui.state = await repository.getState();
+  container.innerHTML = `
+    <div class="admin-section-header assignments-header audit-header">
+      <div>
+        <h2>Audyt</h2>
+        <p class="muted">Centrum kontroli przebiegu zawodów. Dane pochodzą z centralnego modelu aplikacji.</p>
+      </div>
+    </div>
+    <div class="message-tabs audit-tabs" role="tablist" aria-label="Zakładki audytu">
+      ${renderAuditTab("devices", "Tablety")}
+      ${renderAuditTab("competitions", "Konkurencje")}
+    </div>
+    ${ui.auditView === "competitions" ? renderAuditCompetitionsView() : renderAuditDevicesView()}
+  `;
+}
+
+function renderAuditTab(view, label) {
+  return `<button type="button" class="secondary compact-button ${ui.auditView === view ? "active" : ""}" data-audit-view="${view}">${label}</button>`;
+}
+
+function handleAuditClick(event) {
+  const tab = event.target.closest("[data-audit-view]");
+  if (!tab) return;
+  ui.auditView = tab.dataset.auditView;
+  renderAudit();
+}
+
+function resetAuditHome() {
+  ui.auditView = "devices";
+}
+
+function renderAuditDevicesView() {
+  const devices = getAuditDevices();
+  const online = devices.filter(device => device.status === "online").length;
+  const offline = devices.filter(device => device.status === "offline").length;
+  const synced = devices.filter(device => device.syncStatus === "synced").length;
+  const hasDeviceStatus = devices.some(device => device.status === "online" || device.status === "offline");
+  const hasSyncStatus = devices.some(device => device.syncStatus);
+  return `
+    <div class="audit-summary-grid">
+      ${renderAuditMetricCard("Tablety online", hasDeviceStatus ? online : "—", hasDeviceStatus ? "ok" : "neutral")}
+      ${renderAuditMetricCard("Tablety offline", hasDeviceStatus ? offline : "—", hasDeviceStatus && offline ? "danger" : "neutral")}
+      ${renderAuditMetricCard("Zsynchronizowane", hasSyncStatus ? `${synced} / ${devices.length}` : "—", hasSyncStatus && synced === devices.length ? "ok" : "neutral")}
+    </div>
+    ${devices.length ? `
+      <div class="audit-table-layout">
+        <div class="table-shell audit-table-shell">
+          <table class="users-table audit-table">
+            <thead>
+              <tr><th>Tablet</th><th>Konkurencja</th><th>Status</th><th>Ostatnio widziany</th><th>Synchronizacja</th></tr>
+            </thead>
+            <tbody>${devices.map(renderAuditDeviceRow).join("")}</tbody>
+          </table>
+        </div>
+        ${renderAuditLegend("device")}
+      </div>
+      <div class="audit-card-list">${devices.map(renderAuditDeviceCard).join("")}</div>
+    ` : `
+      <div class="audit-table-layout">
+        <div class="empty-state audit-empty-state">
+          <strong>Brak danych o urządzeniach</strong>
+          <span>Dane pojawią się po podłączeniu urządzeń.</span>
+        </div>
+        ${renderAuditLegend("device")}
+      </div>
+    `}
+  `;
+}
+
+function renderAuditCompetitionsView() {
+  const rows = getAuditCompetitionRows();
+  const knownScheduleStatuses = rows.filter(row => row.scheduleStatus.key !== "unknown");
+  const onTime = knownScheduleStatuses.filter(row => row.scheduleStatus.key === "on-time").length;
+  const delayed = knownScheduleStatuses.filter(row => row.scheduleStatus.key === "delayed").length;
+  const unknown = rows.filter(row => row.scheduleStatus.key === "unknown").length;
+  return `
+    <div class="audit-summary-grid">
+      ${renderAuditMetricCard("Zgodnie z planem", knownScheduleStatuses.length ? onTime : "—", knownScheduleStatuses.length ? "ok" : "neutral")}
+      ${renderAuditMetricCard("Opóźnione", knownScheduleStatuses.length ? delayed : "—", delayed ? "danger" : "neutral")}
+      ${renderAuditMetricCard("Brak danych", unknown, "neutral")}
+    </div>
+    <div class="audit-table-layout">
+      <div class="table-shell audit-table-shell">
+        <table class="users-table audit-table">
+          <thead>
+            <tr><th>Nr konkurencji</th><th>Nazwa konkurencji</th><th>Ekipy obsłużone</th><th>Ekipy pozostałe</th><th>Status czasu</th></tr>
+          </thead>
+          <tbody>
+            ${rows.length ? rows.map(renderAuditCompetitionRow).join("") : `<tr><td colspan="5">Brak konkurencji w centralnym modelu.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      ${renderAuditLegend("competition")}
+    </div>
+    <div class="audit-card-list">
+      ${rows.length ? rows.map(renderAuditCompetitionCard).join("") : `<div class="empty-state"><strong>Brak konkurencji.</strong><span>Lista jest pusta w centralnym modelu.</span></div>`}
+    </div>
+  `;
+}
+
+function renderAuditMetricCard(label, value, status = "neutral") {
+  return `
+    <section class="sync-dashboard-card audit-metric-card" data-status="${escapeHtml(status)}">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </section>
+  `;
+}
+
+function renderAuditLegend(type) {
+  if (type === "competition") {
+    return `
+      <aside class="audit-legend" aria-label="Legenda statusu czasu">
+        <h3>Legenda statusu czasu</h3>
+        ${renderAuditLegendItem("ok", "Zielony", "Zgodnie z planem")}
+        ${renderAuditLegendItem("warn", "Pomarańczowy", "Przed czasem")}
+        ${renderAuditLegendItem("danger", "Czerwony", "Opóźnienie")}
+        ${renderAuditLegendItem("neutral", "Szary", "Brak danych")}
+      </aside>
+    `;
+  }
+  return `
+    <aside class="audit-legend" aria-label="Legenda statusu tabletów">
+      <h3>Legenda statusu</h3>
+      ${renderAuditLegendItem("ok", "Zielony", "Online / poprawnie zsynchronizowany")}
+      ${renderAuditLegendItem("warn", "Pomarańczowy", "Online / wymaga synchronizacji")}
+      ${renderAuditLegendItem("danger", "Czerwony", "Offline / problem")}
+      ${renderAuditLegendItem("neutral", "Szary", "Brak danych")}
+    </aside>
+  `;
+}
+
+function renderAuditLegendItem(status, label, description) {
+  return `
+    <div class="audit-legend-item">
+      <span class="audit-legend-swatch ${escapeHtml(status)}" aria-hidden="true"></span>
+      <div><strong>${escapeHtml(label)}</strong><small>${escapeHtml(description)}</small></div>
+    </div>
+  `;
+}
+
+function getAuditDevices() {
+  const byId = new Map();
+  const addDevice = device => {
+    const id = device?.deviceId || device?.id;
+    if (!id) return;
+    byId.set(id, { ...(byId.get(id) || {}), ...device, deviceId: id });
+  };
+  for (const assignment of ui.state?.deviceAssignments || []) {
+    const hasTelemetry = assignment.status || assignment.deviceStatus || assignment.lastSeen || assignment.lastSeenAt || assignment.syncStatus || assignment.lastSyncAt;
+    if (!assignment.deletedAt && assignment.deviceId && hasTelemetry) {
+      addDevice({
+        deviceId: assignment.deviceId,
+        label: assignment.deviceLabel || assignment.label || assignment.deviceId,
+        competitionId: assignment.competitionId,
+        status: assignment.status || assignment.deviceStatus || null,
+        lastSeen: assignment.lastSeen || assignment.lastSeenAt || null,
+        syncStatus: assignment.syncStatus || null,
+        lastSyncAt: assignment.lastSyncAt || null
+      });
+    }
+  }
+  for (const operation of ui.state?.syncOperations || []) {
+    const deviceId = operation.device_id || operation.deviceId;
+    if (!deviceId) continue;
+    addDevice({
+      deviceId,
+      syncStatus: operation.status === SyncStatus.SENT ? "synced" : "pending",
+      lastSyncAt: operation.sent_at || operation.sentAt || operation.updatedAt || operation.createdAt || null
+    });
+  }
+  return [...byId.values()].sort((a, b) => String(a.label || a.deviceId).localeCompare(String(b.label || b.deviceId), "pl", { numeric: true }));
+}
+
+function renderAuditDeviceRow(device) {
+  const rowStatus = getDeviceAuditRowStatus(device);
+  return `
+    <tr class="audit-status-row ${escapeHtml(rowStatus)}">
+      <td><strong>${escapeHtml(device.label || device.deviceId)}</strong><br><small>${escapeHtml(device.deviceId)}</small></td>
+      <td>${escapeHtml(formatAuditCompetitionName(device.competitionId))}</td>
+      <td>${renderAuditStatusBadge(formatDeviceStatus(device.status), getDeviceStatusClass(device.status))}</td>
+      <td>${escapeHtml(formatAuditDate(device.lastSeen))}</td>
+      <td>${renderAuditStatusBadge(formatDeviceSyncStatus(device.syncStatus), getDeviceSyncStatusClass(device.syncStatus))}${device.lastSyncAt ? `<br><small>${escapeHtml(formatAuditDate(device.lastSyncAt))}</small>` : ""}</td>
+    </tr>
+  `;
+}
+
+function renderAuditDeviceCard(device) {
+  const rowStatus = getDeviceAuditRowStatus(device);
+  return `
+    <article class="audit-mobile-card audit-status-card ${escapeHtml(rowStatus)}">
+      <h3>${escapeHtml(device.label || device.deviceId)}</h3>
+      <dl>
+        <div><dt>Tablet</dt><dd>${escapeHtml(device.deviceId)}</dd></div>
+        <div><dt>Konkurencja</dt><dd>${escapeHtml(formatAuditCompetitionName(device.competitionId))}</dd></div>
+        <div><dt>Status</dt><dd>${renderAuditStatusBadge(formatDeviceStatus(device.status), getDeviceStatusClass(device.status))}</dd></div>
+        <div><dt>Ostatnio widziany</dt><dd>${escapeHtml(formatAuditDate(device.lastSeen))}</dd></div>
+        <div><dt>Synchronizacja</dt><dd>${renderAuditStatusBadge(formatDeviceSyncStatus(device.syncStatus), getDeviceSyncStatusClass(device.syncStatus))}</dd></div>
+      </dl>
+    </article>
+  `;
+}
+
+function getAuditCompetitionRows() {
+  const totalTeams = getAdminTeams().length;
+  return getAssignableCompetitions().map(competition => {
+    const completed = countCompletedTeamsForCompetition(competition.id);
+    return {
+      competition,
+      completed,
+      remaining: Math.max(totalTeams - completed, 0),
+      scheduleStatus: getCompetitionScheduleStatus(competition)
+    };
+  });
+}
+
+function countCompletedTeamsForCompetition(competitionId) {
+  const teamIds = new Set();
+  for (const scoreSheet of ui.state.scoreSheets || []) {
+    if (scoreSheet.deletedAt || scoreSheet.competitionId !== competitionId) continue;
+    if (scoreSheet.approvedAt || scoreSheet.status === "approved" || scoreSheet.finalScore != null) {
+      teamIds.add(scoreSheet.teamId);
+    }
+  }
+  return teamIds.size;
+}
+
+function getCompetitionScheduleStatus(competition) {
+  const status = competition?.scheduleStatus || competition?.timeStatus || null;
+  if (status === "on-time") return { key: "on-time", label: "Zgodnie z planem", className: "ok" };
+  if (status === "delayed") return { key: "delayed", label: "Opóźnienie", className: "danger" };
+  if (status === "ahead") return { key: "ahead", label: "Przed czasem", className: "warn" };
+  return { key: "unknown", label: "Brak danych", className: "neutral" };
+}
+
+function renderAuditCompetitionRow(row) {
+  return `
+    <tr class="audit-status-row ${escapeHtml(row.scheduleStatus.className)}">
+      <td><strong>${escapeHtml(getCompetitionNumber(row.competition) || "—")}</strong></td>
+      <td>${escapeHtml(row.competition.name || "—")}</td>
+      <td>${row.completed}</td>
+      <td>${row.remaining}</td>
+      <td>${renderAuditStatusBadge(row.scheduleStatus.label, row.scheduleStatus.className)}</td>
+    </tr>
+  `;
+}
+
+function renderAuditCompetitionCard(row) {
+  return `
+    <article class="audit-mobile-card audit-status-card ${escapeHtml(row.scheduleStatus.className)}">
+      <h3>${escapeHtml(getCompetitionNumber(row.competition) || "—")} ${escapeHtml(row.competition.name || "—")}</h3>
+      <dl>
+        <div><dt>Obsłużone</dt><dd>${row.completed}</dd></div>
+        <div><dt>Pozostałe</dt><dd>${row.remaining}</dd></div>
+        <div><dt>Status czasu</dt><dd>${renderAuditStatusBadge(row.scheduleStatus.label, row.scheduleStatus.className)}</dd></div>
+      </dl>
+    </article>
+  `;
+}
+
+function renderAuditStatusBadge(label, className = "neutral") {
+  return `<span class="audit-status-badge ${escapeHtml(className)}">${escapeHtml(label)}</span>`;
+}
+
+function formatAuditCompetitionName(competitionId) {
+  if (!competitionId) return "—";
+  const competition = getCompetitionById(competitionId);
+  if (!competition) return "—";
+  const number = getCompetitionNumber(competition);
+  return `${number ? `${number} ` : ""}${competition.name || ""}`.trim() || "—";
+}
+
+function formatDeviceStatus(status) {
+  if (status === "online") return "Online";
+  if (status === "offline") return "Offline";
+  return "Brak danych";
+}
+
+function getDeviceStatusClass(status) {
+  if (status === "online") return "ok";
+  if (status === "offline") return "danger";
+  return "neutral";
+}
+
+function formatDeviceSyncStatus(status) {
+  if (status === "synced" || status === SyncStatus.SENT) return "Zsynchronizowany";
+  if (status === "pending" || status === SyncStatus.QUEUED) return "Oczekuje";
+  if (status === SyncStatus.FAILED || status === SyncStatus.CONFLICT) return "Wymaga uwagi";
+  return "Brak danych";
+}
+
+function getDeviceSyncStatusClass(status) {
+  if (status === "synced" || status === SyncStatus.SENT) return "ok";
+  if (status === "pending" || status === SyncStatus.QUEUED) return "warn";
+  if (status === SyncStatus.FAILED || status === SyncStatus.CONFLICT) return "danger";
+  return "neutral";
+}
+
+function getDeviceAuditRowStatus(device) {
+  const status = device?.status;
+  const syncStatus = device?.syncStatus;
+  if (status === "offline") return "danger";
+  if (syncStatus === SyncStatus.FAILED || syncStatus === SyncStatus.CONFLICT || syncStatus === "failed" || syncStatus === "conflict") return "danger";
+  if (status === "online" && (syncStatus === "pending" || syncStatus === SyncStatus.QUEUED)) return "warn";
+  if (!status && (syncStatus === "pending" || syncStatus === SyncStatus.QUEUED)) return "warn";
+  if (status === "online" && (syncStatus === "synced" || syncStatus === SyncStatus.SENT)) return "ok";
+  return "neutral";
+}
+
+function formatAuditDate(value) {
+  return value ? formatDate(value) : "—";
 }
 
 async function renderMessages() {
