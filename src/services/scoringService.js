@@ -24,6 +24,8 @@ export class ScoringService {
       finalCardJson: null,
       approvedAt: null,
       approvedBy: null,
+      actualStartAt: null,
+      completedAt: null,
       deletedAt: null,
       deletedBy: null,
       createdAt: nowIso(),
@@ -96,6 +98,7 @@ export class ScoringService {
       finalCardJson: snapshot.finalCardJson,
       approvedAt,
       approvedBy: userId,
+      completedAt: scoreSheet.completedAt || approvedAt,
       approvedSnapshot: snapshot,
       updatedAt: approvedAt
     };

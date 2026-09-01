@@ -1101,6 +1101,32 @@ button.danger-button:not(.secondary),
   justify-content: flex-start;
 }
 
+body[data-app-mode="judge"] { background: #fff; }
+body[data-app-mode="judge"] .judge-placeholder-panel { max-width: 1180px; width: min(100%, 1180px); background: #fff; }
+.judge-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); padding-bottom: 22px; }
+.judge-panel-header h1 { margin: 4px 0 0; }
+.judge-user-greeting { color: var(--muted); text-align: right; }
+.judge-nav-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 24px 0; }
+.judge-nav-grid button { min-height: 72px; font-size: 18px; font-weight: 800; }
+body[data-app-mode="judge"] .judge-nav-grid button,
+body[data-app-mode="judge"] .judge-dashboard-action { background: var(--accent-2); color: #fff; border-color: #7f1e18; }
+.judge-preview-list { margin: 16px 0 24px; padding-left: 24px; }
+.checklist-row { display: flex; gap: 12px; align-items: center; min-height: 48px; border-bottom: 1px solid var(--line); }
+.time-action { min-width: 150px; }
+.time-action button { min-height: 44px; }
+.judge-dashboard-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.judge-dashboard-card { border: 1px solid var(--line); background: var(--surface); padding: 20px; }
+.judge-dashboard-card h2 { margin: 0 0 12px; font-size: 16px; }
+.judge-dashboard-value { font-size: 30px; font-weight: 900; }
+.judge-dashboard-action { grid-column: span 2; min-height: 76px; font-size: 22px; font-weight: 900; }
+@media (max-width: 700px) {
+  .judge-panel-header { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+  .judge-user-greeting { order: 3; width: 100%; text-align: left; }
+  .judge-nav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .judge-dashboard-grid { grid-template-columns: 1fr; }
+  .judge-dashboard-action { grid-column: auto; }
+}
+
 .ranking-tabs {
   margin-top: 0;
 }
@@ -2229,6 +2255,8 @@ small { color: var(--muted); word-break: break-all; }
   .criterion { font-size: 14px; }
   .choice, .points { padding: 6px; }
   .choice input { width: 34px; height: 34px; }
+  .judge-card-layout { grid-template-columns: 1fr; }
+  .card-scenario-panel { min-height: 120px; }
   .version-footer { flex-wrap: wrap; }
   .form-grid { grid-template-columns: 1fr; }
 }
@@ -2413,3 +2441,16 @@ small { color: var(--muted); word-break: break-all; }
     grid-template-columns: 1fr;
   }
 }
+body[data-app-mode="judge"] .paper-shell { background: #fff; padding: 16px; }
+body[data-app-mode="judge"] #card-screen { overflow-x: hidden; }
+body[data-app-mode="judge"] .paper-toolbar { background: #fff; }
+body[data-app-mode="judge"] .judge-card-layout { width: min(100%, 1360px); margin: 0 auto; }
+.judge-card-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 18px; align-items: start; }
+.card-scenario-panel { background: #fff; border: 2px solid var(--admin-border); padding: 18px; min-height: 180px; }
+.card-scenario-panel h2 { margin-top: 0; color: var(--admin-accent); font-size: 18px; }
+.judge-card-layout .row.field-marked { background: #fff6cf; }
+body[data-app-mode="judge"] .score-card { background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+body[data-app-mode="judge"] .section-title { background: #fff1ee; color: #171412; }
+body[data-app-mode="judge"] #finishAssessmentBtn,
+body[data-app-mode="judge"] #approveBtn,
+body[data-app-mode="judge"] #timerStartBtn { background: var(--accent-2); border-color: #7f1e18; }

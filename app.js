@@ -60,11 +60,14 @@ const ui = {
   savingPassword: false,
   appMode: "judge",
   judgeAssignment: null,
+  activeCompetitionId: null,
+  temporaryMarkedFieldIds: new Set(),
   selectedTeamId: null,
   selectedAssignmentKey: null,
   currentScoreSheetId: null,
   invalidFieldIds: new Set(),
-  timerNoticeTimeoutId: null
+  timerNoticeTimeoutId: null,
+  judgePanelView: "home"
 };
 
 async function init() {
@@ -139,6 +142,12 @@ function bindEvents() {
   $("#confirmAcceptBtn").addEventListener("click", acceptConfirmDialog);
   $("#refreshRankingBtn").addEventListener("click", renderRanking);
   $("#rankingTabs").addEventListener("click", handleRankingClick);
+  $("#judge-placeholder-screen").addEventListener("click", handleJudgePanelClick);
+  $("#judgeCompetitionSelect")?.addEventListener("change", event => {
+    ui.activeCompetitionId = event.target.value;
+    ui.judgePanelView = "home";
+    renderJudgePlaceholder();
+  });
   $("#rankingContent").addEventListener("click", handleRankingClick);
   $("#clearRankingSortBtn").addEventListener("click", clearRankingSort);
   $("#exportCompetitionPointsBtn").addEventListener("click", exportCompetitionPoints);
@@ -173,7 +182,7 @@ function bindEvents() {
   $("#retrySyncBtn").addEventListener("click", trySync);
   $("#timerStartBtn").addEventListener("click", () => {
     hideTimerStartNotice();
-    competitionTimerService.start();
+    startCompetitionTimer();
   });
   $("#timerPauseBtn").addEventListener("click", () => competitionTimerService.pause());
   $("#timerResumeBtn").addEventListener("click", () => competitionTimerService.resume());
@@ -185,12 +194,25 @@ function bindEvents() {
   competitionTimerService.subscribe(renderTimer);
 
   document.addEventListener("change", async event => {
+    if (event.target.id === "judgeTeamSelect") {
+      ui.selectedTeamId = event.target.value;
+      renderJudgePlaceholder();
+      return;
+    }
+    if (event.target.id === "judgeCardSelect") {
+      ui.selectedAssignmentKey = event.target.value;
+      renderJudgePlaceholder();
+      return;
+    }
     if (event.target.id === "assignmentSelect") {
       ui.selectedAssignmentKey = event.target.value;
       saveUiState();
     }
     if (event.target.matches("input[type='radio'][data-field-id]")) {
       await updateField(event.target.dataset.fieldId, event.target.value);
+    }
+    if (event.target.matches("button[data-time-field]")) {
+      await updateField(event.target.dataset.timeField, "yes");
     }
   });
 
@@ -199,6 +221,17 @@ function bindEvents() {
     if (!choice || competitionTimerService.getSnapshot().startedAt) return;
     event.preventDefault();
     showTimerStartNotice();
+  });
+
+  document.addEventListener("click", event => {
+    const row = event.target.closest?.("#scoreCard [data-score-field]");
+    if (!row || event.target.closest("input,button,label")) return;
+    const fieldId = row.dataset.scoreField;
+    if (!fieldId || !competitionTimerService.getSnapshot().startedAt) return;
+    ui.temporaryMarkedFieldIds.has(fieldId)
+      ? ui.temporaryMarkedFieldIds.delete(fieldId)
+      : ui.temporaryMarkedFieldIds.add(fieldId);
+    renderCard();
   });
 }
 
@@ -344,7 +377,7 @@ function getCurrentModeBadge() {
 }
 
 function getDefaultViewForCurrentMode() {
-  return isAdminPanelMode() ? "users-screen" : "team-screen";
+  return isAdminPanelMode() ? "users-screen" : "judge-placeholder-screen";
 }
 
 function getSessionRoles() {
@@ -580,6 +613,7 @@ async function renderAll() {
   if (deviceLabel) deviceLabel.textContent = ui.state.device?.label || "Tablet";
   renderEventBranding();
   applyAppMode();
+  renderJudgePlaceholder();
   renderTeamList();
   renderUsers();
   renderAdminAssignments();
@@ -626,10 +660,17 @@ function applyAppMode() {
   document.body.dataset.appMode = isAdminPanelMode() ? "admin" : "judge";
   document.body.dataset.workMode = ui.appMode;
   const adminOnlyViews = ["users-screen", "assignments-screen", "teams-screen", "ranking-screen", "messages-screen", "audit-screen", "sync-screen", "sync-error-screen"];
+  const legacyJudgeViews = ["team-screen", "start-screen", "sync-error-screen"];
   for (const viewId of adminOnlyViews) {
     const view = document.getElementById(viewId);
     if (view) view.hidden = !isAdminPanelMode();
   }
+  for (const viewId of legacyJudgeViews) {
+    const view = document.getElementById(viewId);
+    if (view) view.hidden = !isAdminPanelMode();
+  }
+  const placeholder = document.getElementById("judge-placeholder-screen");
+  if (placeholder) placeholder.hidden = isAdminPanelMode();
   document.querySelectorAll("[data-view]").forEach(button => {
     const viewId = button.dataset.view;
     const adminOnly = adminOnlyViews.includes(viewId);
@@ -639,16 +680,150 @@ function applyAppMode() {
   if (nav) nav.hidden = !isAdminPanelMode();
   const syncPill = $("#syncPill");
   if (syncPill) syncPill.hidden = !isAdminPanelMode();
-  if (!isAdminPanelMode() && adminOnlyViews.includes(document.querySelector(".view.active")?.id)) {
-    showView("team-screen");
+  if (!isAdminPanelMode() && (adminOnlyViews.includes(document.querySelector(".view.active")?.id)
+    || legacyJudgeViews.includes(document.querySelector(".view.active")?.id))) {
+    showView("judge-placeholder-screen");
   }
   applyAccessControl();
 }
 
 function canShowView(id) {
   if (isAdminPanelMode()) return true;
-  return !["users-screen", "assignments-screen", "teams-screen", "ranking-screen", "messages-screen", "audit-screen", "sync-screen", "sync-error-screen"].includes(id);
+  return ["judge-placeholder-screen", "start-screen", "card-screen", "finish-screen", "confirm-screen"].includes(id);
 }
+
+function renderJudgePlaceholder() {
+  const user = document.getElementById("judgePlaceholderUser");
+  const content = document.getElementById("judgeDashboardContent");
+  if (!user || !content || isAdminPanelMode()) return;
+  user.textContent = ui.authSession?.displayName || ui.authSession?.login || "—";
+  const isAdmin = hasSessionRole("admin");
+  const assigned = getActiveJudgeAssignment(ui.authSession?.id || ui.authSession?.userId) || (!isAdmin ? ui.judgeAssignment : null);
+  const defaultCompetitionId = assigned?.competitionId || getAssignableCompetitions()[0]?.id || null;
+  ui.activeCompetitionId = isAdmin ? (ui.activeCompetitionId || defaultCompetitionId) : (assigned?.competitionId || null);
+  const competition = getCompetitionById(ui.activeCompetitionId);
+  const picker = document.getElementById("judgeCompetitionPicker");
+  const select = document.getElementById("judgeCompetitionSelect");
+  if (picker && select) {
+    picker.hidden = !hasSessionRole("admin");
+    select.innerHTML = getAssignableCompetitions().map(item => `<option value="${escapeHtml(item.id)}" ${item.id === ui.activeCompetitionId ? "selected" : ""}>${escapeHtml(getCompetitionNumber(item))} — ${escapeHtml(item.name)}</option>`).join("");
+  }
+  const teams = getAdminTeams();
+  const completed = competition
+    ? teams.filter(team => (ui.state.scoreSheets || []).some(sheet => !sheet.deletedAt && sheet.approvedAt
+      && sheet.teamId === team.id && sheet.competitionId === competition.id)).length
+    : 0;
+  const messages = (ui.state.messages || []).filter(message => !message.deletedAt && message.status !== "draft"
+    && (message.competitionId === competition?.id || !message.competitionId));
+  const scheduleEntries = competition?.schedule?.entries || [];
+  const nextEntry = scheduleEntries[0];
+  const view = ui.judgePanelView;
+  if (view !== "home") {
+    content.innerHTML = renderJudgeSection(view, competition);
+    return;
+  }
+  const section = view === "home" ? `
+    <div class="judge-dashboard-grid">
+      <article class="judge-dashboard-card"><h2>OBSŁUŻONO</h2><div class="judge-dashboard-value">${completed} / ${teams.length}</div></article>
+      <article class="judge-dashboard-card"><h2>POZOSTAŁO</h2><div class="judge-dashboard-value">${Math.max(teams.length - completed, 0)}</div></article>
+      <article class="judge-dashboard-card"><h2>STATUS</h2><div class="judge-dashboard-value">Brak danych</div></article>
+      <article class="judge-dashboard-card"><h2>NAJBLIŻSZY ZESPÓŁ</h2>${nextEntry ? `<p><strong>${escapeHtml(teamsById(nextEntry.teamId)?.number || "—")}</strong> · ${escapeHtml(teamsById(nextEntry.teamId)?.name || "—")}</p><p class="muted">${escapeHtml(formatScheduleTime(nextEntry.scheduledStartAt))}</p>` : `<p class="muted">Brak harmonogramu startów.</p>`}</article>
+      <article class="judge-dashboard-card"><h2>KOMUNIKAT ORGANIZATORA</h2><p class="muted">${messages.length ? "Dostępne są nowe komunikaty." : "Brak nowych komunikatów"}</p></article>
+      <button type="button" class="judge-dashboard-action" data-judge-start>START NOWEGO ZESPOŁU</button>
+      <article class="judge-dashboard-card"><h2>PLANOWANE ZESPOŁY</h2>${scheduleEntries.length ? `<ul>${scheduleEntries.slice(0, 5).map(entry => `<li>${escapeHtml(teamsById(entry.teamId)?.number || "—")} · ${escapeHtml(teamsById(entry.teamId)?.name || "—")} · ${escapeHtml(formatScheduleTime(entry.scheduledStartAt))}</li>`).join("")}</ul>` : `<p class="muted">Brak harmonogramu.</p>`}</article>
+    </div>` : `
+    <div class="judge-dashboard-card">
+      <h2>${escapeHtml({cards:"MOJE KARTY",times:"TABELA CZASÓW",checklist:"CHECKLISTA",messages:"KOMUNIKATY",start:"ROZPOCZĘCIE NOWEGO ZESPOŁU"}[view] || "SEKCJA")}</h2>
+      <p class="muted">Ta sekcja zostanie udostępniona w kolejnym etapie.</p>
+      <button type="button" class="secondary" data-judge-back>← Wstecz</button>
+    </div>`;
+  document.getElementById("judgeCompetitionTitle").textContent = competition?.name || "Brak przypisanej konkurencji";
+  content.innerHTML = section;
+}
+
+async function handleJudgePanelClick(event) {
+  const nav = event.target.closest("[data-judge-nav]");
+  if (nav) { ui.judgePanelView = nav.dataset.judgeNav; renderJudgePlaceholder(); return; }
+  const startTeam = event.target.closest("[data-judge-open-card]");
+  if (startTeam) {
+    ui.selectedTeamId = document.getElementById("judgeTeamSelect")?.value || null;
+    ui.selectedAssignmentKey = document.getElementById("judgeCardSelect")?.value || null;
+    const selectedSheet = (ui.state.scoreSheets || []).find(sheet => !sheet.deletedAt && sheet.teamId === ui.selectedTeamId && sheet.assignmentKey === ui.selectedAssignmentKey);
+    if (selectedSheet?.approvedAt) {
+      showAppNotice("Ta karta dla wybranego zespołu została już zakończona.");
+      return;
+    }
+    startAssessment();
+    return;
+  }
+  if (event.target.closest("[data-judge-back]")) { ui.judgePanelView = "home"; renderJudgePlaceholder(); return; }
+  if (event.target.closest("[data-judge-start]")) { ui.judgePanelView = "start"; renderJudgePlaceholder(); }
+  const preview = event.target.closest("[data-judge-preview]");
+  if (preview) { ui.judgePanelView = `preview:${preview.dataset.judgePreview}`; renderJudgePlaceholder(); }
+  const checklist = event.target.closest("[data-judge-check]");
+  if (checklist) { toggleJudgeChecklist(checklist.dataset.judgeCheck); return; }
+  const clearChecklist = event.target.closest("[data-judge-clear-checklist]");
+  if (clearChecklist) {
+    if (window.confirm("Wyczyścić zaznaczenia checklisty?")) { clearJudgeChecklist(competition?.id); renderJudgePlaceholder(); }
+  }
+  const confirmMessage = event.target.closest("[data-judge-confirm-message]");
+  if (confirmMessage) {
+    const message = (ui.state.messages || []).find(item => item.id === confirmMessage.dataset.judgeConfirmMessage);
+    if (message) {
+      await repository.upsertMessage({ ...message, confirmations: { ...(message.confirmations || {}), [ui.authSession?.id]: new Date().toISOString() } });
+      await renderAll();
+    }
+  }
+}
+
+function renderJudgeSection(view, competition) {
+  const back = `<button type="button" class="secondary" data-judge-back>← Wstecz</button>`;
+  if (view === "start") {
+    const teams = getAdminTeams();
+    const parts = competition?.parts || [];
+    const selectedTeamId = ui.selectedTeamId || teams[0]?.id || "";
+    const selectedAssignmentKey = ui.selectedAssignmentKey || (parts[0] ? `${competition.id}:${parts[0].id}:${parts[0].cardTemplateId}` : "");
+    const selectedPart = parts.find(part => `${competition.id}:${part.id}:${part.cardTemplateId}` === selectedAssignmentKey) || parts[0];
+    const selectedTemplate = selectedPart && ui.state.cardTemplates.find(item => item.id === selectedPart.cardTemplateId && !item.deletedAt);
+    const completedSheet = selectedTeamId && selectedPart && selectedTemplate && (ui.state.scoreSheets || []).find(sheet => !sheet.deletedAt && sheet.approvedAt && sheet.teamId === selectedTeamId && sheet.competitionId === competition.id && sheet.competitionPartId === selectedPart.id && sheet.cardTemplateId === selectedTemplate.id);
+    const cards = parts.map((part, index) => `<option value="${escapeHtml(`${competition.id}:${part.id}:${part.cardTemplateId}`)}">${escapeHtml(parts.length > 1 ? (part.name || `Karta ${String.fromCharCode(65 + index)}`) : (part.name || competition.name))}</option>`).join("");
+    return `<h2>Rozpoczęcie nowego zespołu</h2><p class="muted">Wybierz zespół, który właśnie rozpoczyna konkurencję.</p><label>Zespół<select id="judgeTeamSelect">${teams.map(team => `<option value="${escapeHtml(team.id)}" ${team.id === selectedTeamId ? "selected" : ""}>${escapeHtml(formatTeamName(team))}</option>`).join("")}</select></label><label>Karta<select id="judgeCardSelect">${cards}</select></label>${completedSheet ? `<div class="validation-error">Ta karta dla wybranego zespołu została już wypełniona. Wybierz inny zespół lub inną kartę.<br><small>Zapisany wynik: ${escapeHtml(String(completedSheet.finalScore ?? "—"))} pkt</small></div>` : ""}<button type="button" data-judge-open-card ${completedSheet ? "disabled" : ""}>Otwórz kartę ocen</button>${back}`;
+  }
+  if (!competition) return `<h2>${escapeHtml(view === "cards" ? "Moje karty" : view === "times" ? "Tabela czasów" : view === "checklist" ? "Checklista" : "Komunikaty")}</h2><p class="muted">Brak przypisanej konkurencji.</p>${back}`;
+  if (view.startsWith("preview:")) {
+    const template = ui.state.cardTemplates.find(item => item.id === view.slice(8));
+    const items = (template?.sections || []).flatMap(section => section.items || []);
+    return `<h2>Podgląd: ${escapeHtml(template?.name || "Karta")}</h2><p class="muted">Tryb podglądu. Ocenianie i zapis są wyłączone.</p><div class="card-scenario-panel"><h3>Opis scenariusza</h3><p>${escapeHtml(template?.scenarioDescription || competition?.scenarioDescription || "Brak opisu scenariusza.")}</p></div><ol class="judge-preview-list">${items.map(item => `<li>${escapeHtml(item.label)}</li>`).join("") || "<li>Brak kryteriów.</li>"}</ol>${back}`;
+  }
+  if (view === "cards") {
+    const sheets = (ui.state.scoreSheets || []).filter(sheet => !sheet.deletedAt && sheet.approvedAt && sheet.competitionId === competition.id);
+    const cards = (competition.parts || []).map(part => {
+      const template = ui.state.cardTemplates.find(item => item.id === part.cardTemplateId && !item.deletedAt);
+      const count = (template?.sections || []).reduce((sum, section) => sum + (section.items || []).length, 0);
+      return `<article class="judge-dashboard-card"><h3>${escapeHtml(part.name || part.code || "Karta")}</h3><p>${count} kryteriów</p><button type="button" data-judge-preview="${escapeHtml(template?.id || "")}">Podgląd kryteriów</button></article>`;
+    }).join("");
+    const done = sheets.length ? sheets.map(sheet => { const team = teamsById(sheet.teamId); return `<li>${escapeHtml(team ? formatTeamName(team) : sheet.teamId)} — ${sheet.finalScore ?? "—"} pkt</li>`; }).join("") : "<li>Brak zrealizowanych kart.</li>";
+    return `<h2>Moje karty</h2><h3>Karty konkurencji</h3><div class="judge-dashboard-grid">${cards || "<p>Brak kart.</p>"}</div><h3>Karty zrealizowane</h3><ul>${done}</ul>${back}`;
+  }
+  if (view === "times") {
+    const entries = competition.schedule?.entries || [];
+    return `<h2>Tabela czasów</h2>${entries.length ? `<div class="table-shell"><table class="users-table"><thead><tr><th>Nr zespołu</th><th>Nazwa zespołu</th><th>Planowany czas</th></tr></thead><tbody>${entries.map(entry => { const team = teamsById(entry.teamId); return `<tr><td>${escapeHtml(team?.number || "—")}</td><td>${escapeHtml(team?.name || "—")}</td><td>${escapeHtml(new Date(entry.scheduledStartAt).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }))}</td></tr>`; }).join("")}</tbody></table></div>` : `<p class="muted">Harmonogram nie został jeszcze zaimportowany ani skonfigurowany.</p>`}${back}`;
+  }
+  if (view === "checklist") {
+    const list = competition.equipmentChecklist || [];
+    const checked = getJudgeChecklist(competition.id);
+    return `<h2>Checklista</h2><p>Sprawdzono ${list.filter((item, i) => checked[checklistKey(item, i)]).length} / ${list.length}</p><div>${list.map((item, i) => { const key = checklistKey(item, i); return `<label class="checklist-row"><input type="checkbox" data-judge-check="${escapeHtml(key)}" ${checked[key] ? "checked" : ""}>${escapeHtml(item.label || item.name || item)}</label>`; }).join("") || "<p class=\"muted\">Brak elementów checklisty.</p>"}</div><button type="button" class="secondary" data-judge-clear-checklist>Wyczyść zaznaczenia</button>${back}`;
+  }
+  const messages = (ui.state.messages || []).filter(message => !message.deletedAt && (message.competitionId === competition.id || !message.competitionId));
+  return `<h2>Komunikaty</h2>${messages.length ? messages.map(message => `<article class="judge-dashboard-card"><h3>${escapeHtml(message.title || "Komunikat")}</h3><p>${escapeHtml(message.body || message.content || "")}</p><small>${escapeHtml(message.priority || "Informacja")}</small>${message.requiresConfirmation && !message.confirmations?.[ui.authSession?.id] ? `<button type="button" data-judge-confirm-message="${escapeHtml(message.id)}">Potwierdź odbiór</button>` : message.requiresConfirmation ? `<p class="muted">Odbiór potwierdzony</p>` : ""}</article>`).join("") : `<p class="muted">Brak nowych komunikatów</p>`}${back}`;
+}
+
+function teamsById(teamId) { return (ui.state.teams || []).find(team => team.id === teamId && !team.deletedAt); }
+function formatScheduleTime(value) { if (!value) return "—"; const date = new Date(value); return Number.isNaN(date.getTime()) ? "—" : date.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }); }
+function checklistKey(item, index) { return String(item?.id || item?.code || item?.label || item?.name || index); }
+function getJudgeChecklist(competitionId) { try { const all = JSON.parse(localStorage.getItem("omrm-judge-checklist-v1") || "{}"); return all[competitionId] || {}; } catch { return {}; } }
+function toggleJudgeChecklist(key) { const all = (() => { try { return JSON.parse(localStorage.getItem("omrm-judge-checklist-v1") || "{}"); } catch { return {}; } })(); const competitionId = ui.activeCompetitionId; const state = all[competitionId] || {}; state[key] = !state[key]; all[competitionId] = state; localStorage.setItem("omrm-judge-checklist-v1", JSON.stringify(all)); renderJudgePlaceholder(); }
+function clearJudgeChecklist(competitionId) { const all = (() => { try { return JSON.parse(localStorage.getItem("omrm-judge-checklist-v1") || "{}"); } catch { return {}; } })(); delete all[competitionId]; localStorage.setItem("omrm-judge-checklist-v1", JSON.stringify(all)); }
 
 function renderUsers() {
   const body = $("#usersBody");
@@ -2172,7 +2347,6 @@ async function saveCompetitionChecklist(competitionId) {
     .map((item, index) => ({
       id: item.id || createChecklistItemId(index),
       label: String(item.label || "").trim(),
-      checked: Boolean(item.checked)
     }))
     .filter(item => item.label);
   await saveCompetition({
@@ -2887,7 +3061,7 @@ function resetChecklistDraft(competition) {
 
 function normalizeEquipmentChecklist(items = []) {
   return (Array.isArray(items) ? items : [])
-    .map((item, index) => createChecklistItem(typeof item === "string" ? item : item?.label, index, item?.id, Boolean(item?.checked)))
+    .map((item, index) => createChecklistItem(typeof item === "string" ? item : item?.label, index, item?.id))
     .filter(item => item.label);
 }
 
@@ -3870,6 +4044,9 @@ async function renderCard() {
   const score = calculateScore(assignment.template, scoreSheet.values);
   const taskInfo = getTaskInfo(assignment);
   $("#cardTitle").textContent = assignment.template.name;
+  $("#cardScenarioDescription").textContent = assignment.template.scenarioDescription
+    || assignment.competition.scenarioDescription
+    || "Brak opisu scenariusza.";
   $("#teamNumber").value = formatTeamName(team);
   $("#cardTaskLabel").textContent = taskInfo.label;
   $("#cardTaskName").textContent = taskInfo.name;
@@ -3907,9 +4084,13 @@ function renderItem(item, scoreSheet) {
   const capturedTime = scoreSheet.timeCaptures?.[item.id];
   const timerStarted = Boolean(competitionTimerService.getSnapshot().startedAt);
   const isInvalid = ui.invalidFieldIds.has(item.id);
+  const isMarked = ui.temporaryMarkedFieldIds.has(item.id);
   const disabled = !timerStarted ? "disabled" : "";
+  if (item.captureTime?.enabled) {
+    return `<div class="row${isInvalid ? " field-invalid" : ""}${isMarked ? " field-marked" : ""}${!timerStarted ? " scoring-locked" : ""}" data-score-field="${item.id}"><div class="criterion"><span>${escapeHtml(item.label)}${item.required ? '<span class="required">*</span>' : ""}</span>${capturedTime ? `<small class="captured-time">${escapeHtml(capturedTime.elapsedDisplay)} od startu / ${escapeHtml(capturedTime.systemTimeDisplay)}</small>` : ""}</div><div class="time-action"><button type="button" data-time-field="${item.id}" ${disabled}>${capturedTime ? "Zapisano" : "ZAPISZ CZAS"}</button></div><div class="points">${item.captureTime?.scoreTiming === "deferredRanking" ? "*" : 0}</div></div>`;
+  }
   return `
-    <div class="row${isInvalid ? " field-invalid" : ""}${!timerStarted ? " scoring-locked" : ""}" data-score-field="${item.id}">
+    <div class="row${isInvalid ? " field-invalid" : ""}${isMarked ? " field-marked" : ""}${!timerStarted ? " scoring-locked" : ""}" data-score-field="${item.id}">
       <div class="criterion">
         <span>${escapeHtml(item.label)}${item.required ? '<span class="required">*</span>' : ""}</span>
         ${capturedTime ? `<small class="captured-time">${escapeHtml(capturedTime.elapsedDisplay)} od startu / ${escapeHtml(capturedTime.systemTimeDisplay)}</small>` : ""}
@@ -3956,9 +4137,19 @@ async function updateField(fieldId, value) {
     userId: getUserId()
   });
   ui.invalidFieldIds.delete(fieldId);
+  ui.temporaryMarkedFieldIds.delete(fieldId);
   await renderCard();
   await renderAudit();
   await renderSyncQueue();
+}
+
+async function startCompetitionTimer() {
+  const scoreSheet = await getCurrentScoreSheet();
+  if (!scoreSheet || scoreSheet.approvedAt) return;
+  const actualStartAt = scoreSheet.actualStartAt || new Date().toISOString();
+  if (!scoreSheet.actualStartAt) await repository.upsertScoreSheet({ ...scoreSheet, actualStartAt, updatedAt: actualStartAt });
+  competitionTimerService.start();
+  await renderCard();
 }
 
 async function finishAssessment() {
@@ -4036,7 +4227,9 @@ async function approveAssessment() {
   ui.currentScoreSheetId = null;
   saveUiState();
   await renderAll();
-  showView("confirm-screen");
+  ui.judgePanelView = "home";
+  showAppNotice(`Karta zespołu została zapisana. Wynik: ${result.scoreSheet.finalScore} / ${assignment.template.maxPoints} pkt.`);
+  showView("judge-placeholder-screen");
 }
 
 async function trySync() {
