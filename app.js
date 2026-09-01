@@ -108,6 +108,7 @@ function bindEvents() {
   $("#loginForm").addEventListener("submit", handleLogin);
   $("#loginBackBtn").addEventListener("click", showLoginModeChoice);
   $("#adminHomeButton").addEventListener("click", openAdminHome);
+  $("#contextSwitcher")?.addEventListener("click", handleContextSwitch);
   $("#eventEditBtn").addEventListener("click", openEventConfigDialog);
   $("#adminMenuToggle").addEventListener("click", toggleAdminMenu);
   $("#eventConfigCancelBtn").addEventListener("click", closeEventConfigDialog);
@@ -138,6 +139,7 @@ function bindEvents() {
   $("#confirmAcceptBtn").addEventListener("click", acceptConfirmDialog);
   $("#refreshRankingBtn").addEventListener("click", renderRanking);
   $("#rankingTabs").addEventListener("click", handleRankingClick);
+  $("#rankingContent").addEventListener("click", handleRankingClick);
   $("#clearRankingSortBtn").addEventListener("click", clearRankingSort);
   $("#exportCompetitionPointsBtn").addEventListener("click", exportCompetitionPoints);
   $("#assignmentsContent").addEventListener("click", handleAssignmentsClick);
@@ -208,9 +210,7 @@ function selectLoginMode(mode) {
   });
   $("#loginModeStep").hidden = true;
   $("#loginForm").hidden = false;
-  $("#loginFormMode").textContent = ui.selectedLoginMode === "admin"
-    ? "Logowanie administratora"
-    : "Logowanie sędziego";
+  $("#loginFormMode").textContent = getLoginModeLabel(ui.selectedLoginMode);
   $("#loginError").hidden = true;
   $("#loginInput").value = "";
   $("#passwordInput").value = "";
@@ -228,7 +228,7 @@ function showLoginModeChoice() {
 }
 
 function openAdminHome() {
-  if (ui.appMode !== "admin") return;
+  if (!isAdminPanelMode()) return;
   resetAssignmentsHome();
   resetTeamsHome();
   resetUsersHome();
@@ -263,7 +263,7 @@ function renderEventBranding() {
 }
 
 function openEventConfigDialog() {
-  if (ui.appMode !== "admin") return;
+  if (!requireAdminPermission()) return;
   const eventConfig = getEventConfig();
   $("#eventNameInput").value = eventConfig.eventName;
   $("#eventLocationInput").value = eventConfig.location;
@@ -284,6 +284,7 @@ function closeEventConfigDialog() {
 
 async function saveEventConfigFromForm(event) {
   event.preventDefault();
+  if (!requireAdminPermission()) return;
   const eventName = $("#eventNameInput").value.trim();
   const location = $("#eventLocationInput").value.trim();
   const dateFrom = $("#eventDateFromInput").value;
@@ -330,6 +331,115 @@ function showAppNotice(message) {
   }, 3000);
 }
 
+function getLoginModeLabel(mode) {
+  if (mode === "admin") return "Logowanie administratora";
+  if (mode === "office") return "Logowanie biura zawodów";
+  return "Logowanie sędziego";
+}
+
+function getCurrentModeBadge() {
+  if (ui.appMode === "admin") return "ADMINISTRACJA";
+  if (ui.appMode === "office") return "BIURO";
+  return "SĘDZIA";
+}
+
+function getDefaultViewForCurrentMode() {
+  return isAdminPanelMode() ? "users-screen" : "team-screen";
+}
+
+function getSessionRoles() {
+  const sessionRoles = ui.authSession?.roles?.map(normalizeRole).filter(Boolean) || [];
+  const accountRoles = getLoginAccounts()
+    .find(account => account.id === ui.authSession?.id || account.login === ui.authSession?.login)
+    ?.roles || [];
+  return [...new Set([...sessionRoles, ...accountRoles].map(normalizeRole).filter(Boolean))];
+}
+
+function hasSessionRole(role) {
+  const normalized = normalizeRole(role);
+  return normalized ? getSessionRoles().includes(normalized) : false;
+}
+
+function userHasRole(user, role) {
+  const normalized = normalizeRole(role);
+  const roles = user?.roles?.map(normalizeRole).filter(Boolean) || [];
+  return Boolean(normalized && roles.includes(normalized));
+}
+
+function isAdminPanelMode() {
+  return ui.appMode === "admin" || ui.appMode === "office";
+}
+
+function canManageAdminData() {
+  return hasSessionRole("admin");
+}
+
+function canSendMessages() {
+  return hasSessionRole("admin") || hasSessionRole("office");
+}
+
+function canRunSync() {
+  return hasSessionRole("admin") || hasSessionRole("office");
+}
+
+function requireAdminPermission() {
+  if (canManageAdminData()) return true;
+  showPermissionDenied();
+  return false;
+}
+
+function requireMessagePermission() {
+  if (canSendMessages()) return true;
+  showPermissionDenied();
+  return false;
+}
+
+function requireSyncPermission() {
+  if (canRunSync()) return true;
+  showPermissionDenied();
+  return false;
+}
+
+function showPermissionDenied() {
+  showAppNotice("Funkcja dostępna tylko dla administratora.");
+}
+
+function adminWriteAttributes() {
+  return canManageAdminData()
+    ? ""
+    : ` disabled aria-disabled="true"`;
+}
+
+function applyAccessControl() {
+  const locked = isAdminPanelMode() && !canManageAdminData();
+  document.querySelectorAll("[data-admin-write]").forEach(element => {
+    element.disabled = locked;
+    element.setAttribute("aria-disabled", String(locked));
+    if (locked) {
+      if (element.hasAttribute("title")) element.dataset.originalTitle = element.getAttribute("title");
+      element.setAttribute("title", "Funkcja dostępna tylko dla administratora.");
+    } else if (element.dataset.originalTitle) {
+      element.setAttribute("title", element.dataset.originalTitle);
+      delete element.dataset.originalTitle;
+    } else if (element.getAttribute("title") === "Funkcja dostępna tylko dla administratora.") {
+      element.removeAttribute("title");
+    }
+  });
+}
+
+function renderContextSwitcher() {
+  const switcher = $("#contextSwitcher");
+  if (!switcher) return;
+  const visible = Boolean(ui.authSession && hasSessionRole("admin"));
+  switcher.hidden = !visible;
+  if (!visible) return;
+  switcher.querySelectorAll("[data-context-mode]").forEach(button => {
+    const active = normalizeAppMode(button.dataset.contextMode) === ui.appMode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
 async function handleLogin(event) {
   event.preventDefault();
   if (!ui.selectedLoginMode) {
@@ -342,7 +452,7 @@ async function handleLogin(event) {
     candidate.status !== "inactive" &&
     candidate.login === login &&
     candidate.password === password &&
-    candidate.roles.includes(ui.selectedLoginMode)
+    userHasRole(candidate, ui.selectedLoginMode)
   );
 
   if (!account) {
@@ -354,6 +464,7 @@ async function handleLogin(event) {
     id: account.id,
     login: account.login,
     displayName: account.displayName || account.login,
+    roles: account.roles,
     mode: ui.selectedLoginMode
   };
   sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(ui.authSession));
@@ -362,7 +473,7 @@ async function handleLogin(event) {
   applyAuthenticatedSession();
   await renderAll();
   await restoreVisibleAssessment();
-  showView(ui.appMode === "admin" ? "users-screen" : "team-screen");
+  showView(getDefaultViewForCurrentMode());
 }
 
 function getLoginAccounts() {
@@ -397,6 +508,7 @@ function restoreAuthSession() {
       id: parsed.id || parsed.login,
       login: parsed.login,
       displayName: parsed.displayName || parsed.login,
+      roles: parsed.roles?.map(normalizeRole).filter(Boolean) || [],
       mode: normalizeAppMode(parsed.mode)
     };
   } catch {
@@ -409,7 +521,8 @@ function applyAuthenticatedSession() {
   ui.appMode = normalizeAppMode(ui.authSession?.mode);
   document.body.classList.add("authenticated");
   document.body.classList.remove("logged-out");
-  $("#modePill").textContent = `${ui.appMode === "admin" ? "ADMIN" : "SĘDZIA"} · ${ui.authSession?.displayName || ""}`;
+  $("#modePill").textContent = `${getCurrentModeBadge()} · ${ui.authSession?.displayName || ""}`;
+  renderContextSwitcher();
   applyAppMode();
 }
 
@@ -418,6 +531,7 @@ function applyLoggedOutState() {
   document.body.classList.add("logged-out");
   document.body.classList.remove("authenticated");
   $("#modePill").textContent = "Tryb";
+  renderContextSwitcher();
   showLoginModeChoice();
 }
 
@@ -430,6 +544,20 @@ function logout() {
   competitionTimerService.reset();
   applyLoggedOutState();
   showView("team-screen");
+}
+
+function handleContextSwitch(event) {
+  const button = event.target.closest("[data-context-mode]");
+  if (!button || !hasSessionRole("admin")) return;
+  const nextMode = normalizeAppMode(button.dataset.contextMode);
+  ui.authSession = {
+    ...ui.authSession,
+    mode: nextMode
+  };
+  sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(ui.authSession));
+  applyAuthenticatedSession();
+  closeAdminMenu();
+  showView(getDefaultViewForCurrentMode());
 }
 
 function showTimerStartNotice() {
@@ -495,28 +623,30 @@ async function navigateToView(id) {
 }
 
 function applyAppMode() {
-  document.body.dataset.appMode = ui.appMode;
+  document.body.dataset.appMode = isAdminPanelMode() ? "admin" : "judge";
+  document.body.dataset.workMode = ui.appMode;
   const adminOnlyViews = ["users-screen", "assignments-screen", "teams-screen", "ranking-screen", "messages-screen", "audit-screen", "sync-screen", "sync-error-screen"];
   for (const viewId of adminOnlyViews) {
     const view = document.getElementById(viewId);
-    if (view) view.hidden = ui.appMode !== "admin";
+    if (view) view.hidden = !isAdminPanelMode();
   }
   document.querySelectorAll("[data-view]").forEach(button => {
     const viewId = button.dataset.view;
     const adminOnly = adminOnlyViews.includes(viewId);
-    button.hidden = ui.appMode !== "admin" && adminOnly;
+    button.hidden = !isAdminPanelMode() && adminOnly;
   });
   const nav = document.querySelector(".topbar nav");
-  if (nav) nav.hidden = ui.appMode !== "admin";
+  if (nav) nav.hidden = !isAdminPanelMode();
   const syncPill = $("#syncPill");
-  if (syncPill) syncPill.hidden = ui.appMode !== "admin";
-  if (ui.appMode !== "admin" && adminOnlyViews.includes(document.querySelector(".view.active")?.id)) {
+  if (syncPill) syncPill.hidden = !isAdminPanelMode();
+  if (!isAdminPanelMode() && adminOnlyViews.includes(document.querySelector(".view.active")?.id)) {
     showView("team-screen");
   }
+  applyAccessControl();
 }
 
 function canShowView(id) {
-  if (ui.appMode === "admin") return true;
+  if (isAdminPanelMode()) return true;
   return !["users-screen", "assignments-screen", "teams-screen", "ranking-screen", "messages-screen", "audit-screen", "sync-screen", "sync-error-screen"].includes(id);
 }
 
@@ -531,7 +661,7 @@ function renderUsers() {
     ? users.map(user => `
       <tr data-user-id="${escapeHtml(user.id)}">
         <td class="select-column">
-          <input type="checkbox" class="user-select" data-user-id="${escapeHtml(user.id)}" aria-label="Zaznacz użytkownika ${escapeHtml(getUserFullName(user))}" ${ui.selectedUserIds.has(user.id) ? "checked" : ""}>
+          <input type="checkbox" class="user-select" data-user-id="${escapeHtml(user.id)}" aria-label="Zaznacz użytkownika ${escapeHtml(getUserFullName(user))}" ${ui.selectedUserIds.has(user.id) ? "checked" : ""}${adminWriteAttributes()}>
         </td>
         <td><strong>${escapeHtml(getUserFullName(user))}</strong></td>
         <td>${escapeHtml(user.login)}</td>
@@ -540,9 +670,9 @@ function renderUsers() {
         <td><span class="badge ${user.status === "active" ? "ok" : "warn"}">${user.status === "active" ? "Aktywny" : "Nieaktywny"}</span></td>
         <td>
           <div class="table-actions">
-            <button type="button" class="secondary compact-button" data-user-action="edit" data-user-id="${escapeHtml(user.id)}">Edytuj</button>
-            <button type="button" class="secondary compact-button" data-user-action="password" data-user-id="${escapeHtml(user.id)}">Zmień hasło</button>
-            <button type="button" class="secondary compact-button danger-button" data-user-action="delete" data-user-id="${escapeHtml(user.id)}">Usuń</button>
+            <button type="button" class="secondary compact-button" data-user-action="edit" data-user-id="${escapeHtml(user.id)}"${adminWriteAttributes()}>Edytuj</button>
+            <button type="button" class="secondary compact-button" data-user-action="password" data-user-id="${escapeHtml(user.id)}"${adminWriteAttributes()}>Zmień hasło</button>
+            <button type="button" class="secondary compact-button danger-button" data-user-action="delete" data-user-id="${escapeHtml(user.id)}"${adminWriteAttributes()}>Usuń</button>
           </div>
         </td>
       </tr>
@@ -550,6 +680,7 @@ function renderUsers() {
     : `<tr><td colspan="7">Brak użytkowników.</td></tr>`;
   renderUserCards(users);
   renderBulkActions(users);
+  applyAccessControl();
 }
 
 function getDisplayUsers() {
@@ -584,13 +715,13 @@ function renderUserCards(users) {
   cards.innerHTML = users.length
     ? `
       <label class="card-select-all">
-        <input type="checkbox" class="select-all-users" ${areAllVisibleUsersSelected(users) ? "checked" : ""}>
+        <input type="checkbox" class="select-all-users" ${areAllVisibleUsersSelected(users) ? "checked" : ""}${adminWriteAttributes()}>
         Zaznacz wszystkich
       </label>
       ${users.map(user => `
         <article class="user-card" data-user-id="${escapeHtml(user.id)}">
         <label class="user-card-select">
-          <input type="checkbox" class="user-select" data-user-id="${escapeHtml(user.id)}" aria-label="Zaznacz użytkownika ${escapeHtml(getUserFullName(user))}" ${ui.selectedUserIds.has(user.id) ? "checked" : ""}>
+          <input type="checkbox" class="user-select" data-user-id="${escapeHtml(user.id)}" aria-label="Zaznacz użytkownika ${escapeHtml(getUserFullName(user))}" ${ui.selectedUserIds.has(user.id) ? "checked" : ""}${adminWriteAttributes()}>
           <span>Zaznacz</span>
         </label>
         <h3>${escapeHtml(getUserFullName(user))}</h3>
@@ -601,9 +732,9 @@ function renderUserCards(users) {
           <div><dt>Status</dt><dd><span class="badge ${user.status === "active" ? "ok" : "warn"}">${user.status === "active" ? "Aktywny" : "Nieaktywny"}</span></dd></div>
         </dl>
         <div class="table-actions">
-          <button type="button" class="secondary compact-button" data-user-action="edit" data-user-id="${escapeHtml(user.id)}">Edytuj</button>
-          <button type="button" class="secondary compact-button" data-user-action="password" data-user-id="${escapeHtml(user.id)}">Zmień hasło</button>
-          <button type="button" class="secondary compact-button danger-button" data-user-action="delete" data-user-id="${escapeHtml(user.id)}">Usuń</button>
+          <button type="button" class="secondary compact-button" data-user-action="edit" data-user-id="${escapeHtml(user.id)}"${adminWriteAttributes()}>Edytuj</button>
+          <button type="button" class="secondary compact-button" data-user-action="password" data-user-id="${escapeHtml(user.id)}"${adminWriteAttributes()}>Zmień hasło</button>
+          <button type="button" class="secondary compact-button danger-button" data-user-action="delete" data-user-id="${escapeHtml(user.id)}"${adminWriteAttributes()}>Usuń</button>
         </div>
         </article>
       `).join("")}`
@@ -665,8 +796,10 @@ function splitDisplayName(displayName = "") {
 }
 
 function normalizeRole(role) {
-  if (role === "admin" || role === "administrator") return "admin";
-  if (role === "judge" || role === "sedzia" || role === "sędzia") return "judge";
+  const normalized = String(role || "").trim().toLowerCase();
+  if (normalized === "admin" || normalized === "administrator") return "admin";
+  if (normalized === "office" || normalized === "biuro") return "office";
+  if (normalized === "judge" || normalized === "sedzia" || normalized === "sędzia") return "judge";
   return null;
 }
 
@@ -710,18 +843,21 @@ function getUserFullName(user) {
 
 function formatUserRoles(roles = []) {
   const labels = [];
-  if (roles.includes("judge")) labels.push("Sędzia");
-  if (roles.includes("admin")) labels.push("Administrator");
+  const normalizedRoles = roles.map(normalizeRole).filter(Boolean);
+  if (normalizedRoles.includes("judge")) labels.push("Sędzia");
+  if (normalizedRoles.includes("office")) labels.push("Biuro");
+  if (normalizedRoles.includes("admin")) labels.push("Administrator");
   return labels.length ? labels.map(label => `<span class="role-chip">${label}</span>`).join(" ") : "—";
 }
 
 function formatAssignments(user) {
-  if (!user.roles.includes("judge")) return "—";
+  if (!userHasRole(user, "judge")) return "—";
   const assignment = getActiveJudgeAssignment(user.id);
   return assignment ? getCompetitionName(assignment.competitionId) : "Brak";
 }
 
 function openAddUserForm() {
+  if (!requireAdminPermission()) return;
   ui.editingUserId = null;
   $("#userFormTitle").textContent = "Dodaj użytkownika";
   $("#saveUserBtn").textContent = "Dodaj użytkownika";
@@ -732,6 +868,7 @@ function openAddUserForm() {
   $("#userSecretInput").value = "";
   $("#userPasswordLabel").hidden = false;
   $("#roleJudgeInput").checked = false;
+  $("#roleOfficeInput").checked = false;
   $("#roleAdminInput").checked = false;
   document.querySelector("input[name='userStatus'][value='active']").checked = true;
   hideUserFormError();
@@ -743,6 +880,7 @@ function openAddUserForm() {
 }
 
 function openEditUserForm(userId) {
+  if (!requireAdminPermission()) return;
   const user = getDisplayUsers().find(item => item.id === userId);
   if (!user) return;
   ui.editingUserId = user.id;
@@ -754,8 +892,9 @@ function openEditUserForm(userId) {
   $("#userAccountInput").value = user.login;
   $("#userSecretInput").value = "";
   $("#userPasswordLabel").hidden = true;
-  $("#roleJudgeInput").checked = user.roles.includes("judge");
-  $("#roleAdminInput").checked = user.roles.includes("admin");
+  $("#roleJudgeInput").checked = userHasRole(user, "judge");
+  $("#roleOfficeInput").checked = userHasRole(user, "office");
+  $("#roleAdminInput").checked = userHasRole(user, "admin");
   document.querySelector(`input[name='userStatus'][value='${user.status}']`).checked = true;
   hideUserFormError();
   hideBulkMessage();
@@ -772,6 +911,7 @@ function closeUserForm() {
 }
 
 function openImportUsersPanel() {
+  if (!requireAdminPermission()) return;
   closeUserForm();
   closePasswordForm();
   hideBulkMessage();
@@ -952,6 +1092,7 @@ function handleUserImportInput(event) {
 }
 
 async function importValidUsers() {
+  if (!requireAdminPermission()) return;
   const rows = (ui.userImportRows || []).filter(row => row.valid);
   if (!rows.length) return;
   const now = new Date().toISOString();
@@ -980,6 +1121,7 @@ async function importValidUsers() {
 
 async function saveUserFromForm(event) {
   event.preventDefault();
+  if (!requireAdminPermission()) return;
   if (ui.savingUser) return;
   ui.savingUser = true;
   const existingUsers = getDisplayUsers();
@@ -992,6 +1134,7 @@ async function saveUserFromForm(event) {
   const password = $("#userSecretInput").value;
   const roles = [
     $("#roleJudgeInput").checked ? "judge" : null,
+    $("#roleOfficeInput").checked ? "office" : null,
     $("#roleAdminInput").checked ? "admin" : null
   ].filter(Boolean);
   const status = document.querySelector("input[name='userStatus']:checked")?.value || "active";
@@ -1057,6 +1200,7 @@ function hideUserFormError() {
 function handleUsersTableClick(event) {
   const button = event.target.closest("[data-user-action]");
   if (!button) return;
+  if (!requireAdminPermission()) return;
   const userId = button.dataset.userId;
   if (button.dataset.userAction === "edit") openEditUserForm(userId);
   if (button.dataset.userAction === "password") openPasswordForm(userId);
@@ -1089,12 +1233,14 @@ function toggleAllVisibleUsers(event) {
 
 function handleBulkActionClick(event) {
   const menuButton = event.target.closest("[data-bulk-menu]");
+  if (menuButton && !requireAdminPermission()) return;
   if (menuButton) {
     toggleBulkMenu(menuButton.dataset.bulkMenu);
     return;
   }
   const actionButton = event.target.closest("[data-bulk-action]");
   if (!actionButton) return;
+  if (!requireAdminPermission()) return;
   const action = actionButton.dataset.bulkAction;
   if (action === "add-role" || action === "remove-role") {
     applyBulkRoleOperation(action, actionButton.dataset.role);
@@ -1127,6 +1273,7 @@ function getSelectedUsers() {
 }
 
 function requestDeleteUser(userId) {
+  if (!requireAdminPermission()) return;
   hideBulkMessage();
   const user = getDisplayUsers().find(item => item.id === userId);
   if (!user) return;
@@ -1162,6 +1309,7 @@ function requestBulkDeleteUsers() {
 }
 
 async function softDeleteUsers(users) {
+  if (!requireAdminPermission()) return;
   const now = new Date().toISOString();
   for (const user of users) {
     await repository.upsertUser({
@@ -1179,6 +1327,7 @@ async function softDeleteUsers(users) {
 }
 
 async function applyBulkRoleOperation(action, role) {
+  if (!requireAdminPermission()) return;
   hideBulkMessage();
   closeBulkMenus();
   const users = getSelectedUsers();
@@ -1199,6 +1348,7 @@ async function applyBulkRoleOperation(action, role) {
 }
 
 async function applyBulkStatusOperation(status) {
+  if (!requireAdminPermission()) return;
   hideBulkMessage();
   closeBulkMenus();
   const users = getSelectedUsers();
@@ -1214,6 +1364,7 @@ async function applyBulkStatusOperation(status) {
 }
 
 async function saveBulkUsers(users) {
+  if (!requireAdminPermission()) return;
   const now = new Date().toISOString();
   for (const user of users) {
     const next = { ...user, updatedAt: now };
@@ -1250,7 +1401,7 @@ function validateUsersMutation(changedUsers, options = {}) {
 }
 
 function isActiveAdmin(user) {
-  return user.status === "active" && user.roles.includes("admin") && !user.deletedAt;
+  return user.status === "active" && userHasRole(user, "admin") && !user.deletedAt;
 }
 
 function isCurrentUser(user) {
@@ -1311,6 +1462,7 @@ async function acceptConfirmDialog() {
 }
 
 function openPasswordForm(userId) {
+  if (!requireAdminPermission()) return;
   const user = getDisplayUsers().find(item => item.id === userId);
   if (!user) return;
   ui.passwordUserId = user.id;
@@ -1332,6 +1484,7 @@ function closePasswordForm() {
 
 async function savePasswordFromForm(event) {
   event.preventDefault();
+  if (!requireAdminPermission()) return;
   if (ui.savingPassword) return;
   ui.savingPassword = true;
   const userId = $("#passwordUserIdInput").value;
@@ -1377,7 +1530,7 @@ function upsertAuthAccountFromUser(user) {
     id: user.id,
     login: user.login,
     password: user.password,
-    mode: user.roles.includes("admin") ? "admin" : "judge",
+    mode: userHasRole(user, "admin") ? "admin" : userHasRole(user, "office") ? "office" : "judge",
     roles: user.roles,
     status: user.status,
     displayName: getUserFullName(user),
@@ -1463,7 +1616,7 @@ function renderAssignmentsCompetitions(container) {
       <div class="admin-header-actions">
         <label class="secondary compact-button file-button">
           Importuj konkurencje
-          <input id="competitionImportInput" type="file" accept=".xlsx,.csv,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/json">
+          <input id="competitionImportInput" type="file" accept=".xlsx,.csv,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/json"${adminWriteAttributes()}>
         </label>
       </div>
     </div>
@@ -1476,7 +1629,7 @@ function renderAssignmentsCompetitions(container) {
           <tr>
             <th class="select-column">
               <label class="select-all-label">
-                <input type="checkbox" id="selectAllCompetitions" ${areAllVisibleCompetitionsSelected(competitions) ? "checked" : ""}>
+                <input type="checkbox" id="selectAllCompetitions" ${areAllVisibleCompetitionsSelected(competitions) ? "checked" : ""}${adminWriteAttributes()}>
                 <span>Zaznacz wszystkie</span>
               </label>
             </th>
@@ -1494,7 +1647,7 @@ function renderAssignmentsCompetitions(container) {
             const currentJudges = assignedJudges.length;
             return `
               <tr data-competition-drop-id="${escapeHtml(competition.id)}">
-                <td class="select-column"><input type="checkbox" class="competition-select" data-competition-id="${escapeHtml(competition.id)}" aria-label="Zaznacz konkurencję ${escapeHtml(competition.name)}" ${ui.selectedCompetitionIds.has(competition.id) ? "checked" : ""}></td>
+                <td class="select-column"><input type="checkbox" class="competition-select" data-competition-id="${escapeHtml(competition.id)}" aria-label="Zaznacz konkurencję ${escapeHtml(competition.name)}" ${ui.selectedCompetitionIds.has(competition.id) ? "checked" : ""}${adminWriteAttributes()}></td>
                 <td><strong>${escapeHtml(getCompetitionNumber(competition))}</strong></td>
                 <td>
                   <strong>${escapeHtml(competition.name)}</strong>
@@ -1516,7 +1669,7 @@ function renderAssignedJudgeList(competitionId, judges) {
   return `
     <div class="assigned-judge-list" data-competition-drop-id="${escapeHtml(competitionId)}">
       ${judges.length ? judges.map(judge => `
-        <span class="assigned-judge-chip" draggable="true" data-drag-judge-id="${escapeHtml(judge.id)}" data-current-competition-id="${escapeHtml(competitionId)}" title="Przeciągnij do innej konkurencji">
+        <span class="assigned-judge-chip" draggable="${canManageAdminData() ? "true" : "false"}" data-drag-judge-id="${escapeHtml(judge.id)}" data-current-competition-id="${escapeHtml(competitionId)}" title="${canManageAdminData() ? "Przeciągnij do innej konkurencji" : "Funkcja dostępna tylko dla administratora."}">
           ${escapeHtml(getUserFullName(judge))}
         </span>
       `).join("") : `<span class="assigned-judge-empty">Brak przypisanych sędziów</span>`}
@@ -1531,7 +1684,7 @@ function renderCompetitionBulkActions() {
     <div class="bulk-actions-bar">
       <strong>Zaznaczono: ${count}</strong>
       <div class="bulk-actions">
-        <button type="button" class="secondary compact-button danger-button" data-assignment-action="delete-competitions">Usuń</button>
+          <button type="button" class="secondary compact-button danger-button" data-assignment-action="delete-competitions"${adminWriteAttributes()}>Usuń</button>
       </div>
     </div>
   `;
@@ -1563,7 +1716,7 @@ function renderCompetitionImportPreview() {
         </div>
         <div class="action-row">
           <button type="button" class="secondary" data-assignment-action="cancel-competition-import">Anuluj</button>
-          <button type="button" data-assignment-action="confirm-competition-import" ${validRows.length ? "" : "disabled"}>Importuj ${validRows.length} ${pluralizeCompetitions(validRows.length)}</button>
+          <button type="button" data-assignment-action="confirm-competition-import" ${validRows.length ? "" : "disabled"}${adminWriteAttributes()}>Importuj ${validRows.length} ${pluralizeCompetitions(validRows.length)}</button>
         </div>
       ` : `
         <div class="import-columns">
@@ -1598,14 +1751,14 @@ function renderCompetitionAssignmentDetail(container) {
       </div>
       <div class="admin-header-actions">
         <button type="button" class="secondary compact-button" data-assignments-view="competitions">Wróć do listy</button>
-        <button type="button" class="compact-button" data-assignment-action="save-competition" data-competition-id="${escapeHtml(competition.id)}">Zapisz</button>
+        <button type="button" class="compact-button" data-assignment-action="save-competition" data-competition-id="${escapeHtml(competition.id)}"${adminWriteAttributes()}>Zapisz</button>
       </div>
     </div>
     <div id="assignmentMessage" class="bulk-message" role="alert" hidden></div>
     <div class="assignment-check-list">
       ${judges.length ? judges.map(judge => `
         <label class="assignment-check-row">
-          <input type="checkbox" name="competitionJudge" value="${escapeHtml(judge.id)}" ${assignedJudgeIds.has(judge.id) ? "checked" : ""}>
+          <input type="checkbox" name="competitionJudge" value="${escapeHtml(judge.id)}" ${assignedJudgeIds.has(judge.id) ? "checked" : ""}${adminWriteAttributes()}>
           <span>
             <strong>${escapeHtml(getUserFullName(judge))}</strong>
             <small>${escapeHtml(judge.login)}</small>
@@ -1614,7 +1767,7 @@ function renderCompetitionAssignmentDetail(container) {
       `).join("") : `<div class="empty-state">Brak aktywnych użytkowników z rolą Sędzia.</div>`}
     </div>
     <div class="action-row">
-      <button type="button" data-assignment-action="save-competition" data-competition-id="${escapeHtml(competition.id)}">Zapisz przydziały</button>
+      <button type="button" data-assignment-action="save-competition" data-competition-id="${escapeHtml(competition.id)}"${adminWriteAttributes()}>Zapisz przydziały</button>
     </div>
   `;
 }
@@ -1648,15 +1801,15 @@ function renderCompetitionSettings(container) {
       <div class="form-grid">
         <label>
           Nr konkurencji
-          <input id="competitionNumberInput" value="${escapeHtml(getCompetitionNumber(competition))}" autocomplete="off">
+          <input id="competitionNumberInput" value="${escapeHtml(getCompetitionNumber(competition))}" autocomplete="off"${adminWriteAttributes()}>
         </label>
         <label>
           Nazwa konkurencji
-          <input id="competitionNameInput" value="${escapeHtml(competition.name)}" autocomplete="off">
+          <input id="competitionNameInput" value="${escapeHtml(competition.name)}" autocomplete="off"${adminWriteAttributes()}>
         </label>
         <label>
           Minimalna liczba sędziów
-          <input id="minJudgesInput" type="number" min="1" step="1" value="${escapeHtml(minJudges)}">
+          <input id="minJudgesInput" type="number" min="1" step="1" value="${escapeHtml(minJudges)}"${adminWriteAttributes()}>
         </label>
         <label>
           Sędziowie
@@ -1664,7 +1817,7 @@ function renderCompetitionSettings(container) {
         </label>
       </div>
       <div class="action-row">
-        <button type="button" data-assignment-action="save-competition-settings" data-competition-id="${escapeHtml(competition.id)}">Zapisz</button>
+        <button type="button" data-assignment-action="save-competition-settings" data-competition-id="${escapeHtml(competition.id)}"${adminWriteAttributes()}>Zapisz</button>
       </div>
     </section>
     <section class="competition-settings-block">
@@ -1675,7 +1828,7 @@ function renderCompetitionSettings(container) {
         </div>
         <label class="secondary compact-button file-button">
           Importuj checklistę
-          <input id="checklistImportInput" type="file" accept=".xlsx,.csv,.json,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/json,text/plain">
+          <input id="checklistImportInput" type="file" accept=".xlsx,.csv,.json,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/json,text/plain"${adminWriteAttributes()}>
         </label>
       </div>
       ${renderChecklistWorkbookImportPreview()}
@@ -1683,8 +1836,8 @@ function renderCompetitionSettings(container) {
         ${renderChecklistDraftItems()}
       </div>
       <div class="action-row">
-        <button type="button" class="secondary" data-assignment-action="add-checklist-item">Dodaj pozycję</button>
-        <button type="button" data-assignment-action="save-checklist" data-competition-id="${escapeHtml(competition.id)}">Zapisz checklistę</button>
+        <button type="button" class="secondary" data-assignment-action="add-checklist-item"${adminWriteAttributes()}>Dodaj pozycję</button>
+        <button type="button" data-assignment-action="save-checklist" data-competition-id="${escapeHtml(competition.id)}"${adminWriteAttributes()}>Zapisz checklistę</button>
       </div>
     </section>
   `;
@@ -1698,20 +1851,20 @@ function renderChecklistDraftItems() {
   return items.map((item, index) => `
     <div class="checklist-item-row" data-checklist-index="${index}">
       <label class="checklist-item-check">
-        <input type="checkbox" class="checklist-item-checked" data-checklist-index="${index}" ${item.checked ? "checked" : ""}>
+        <input type="checkbox" class="checklist-item-checked" data-checklist-index="${index}" ${item.checked ? "checked" : ""}${adminWriteAttributes()}>
         <span class="sr-only">Pozycja sprawdzona</span>
       </label>
       ${ui.editingChecklistItemId === item.id ? `
-        <input class="checklist-item-input" value="${escapeHtml(item.label || "")}" aria-label="Treść pozycji checklisty">
+        <input class="checklist-item-input" value="${escapeHtml(item.label || "")}" aria-label="Treść pozycji checklisty"${adminWriteAttributes()}>
         <div class="table-actions">
-          <button type="button" class="secondary compact-button" data-assignment-action="save-checklist-item" data-checklist-index="${index}">Zapisz</button>
+          <button type="button" class="secondary compact-button" data-assignment-action="save-checklist-item" data-checklist-index="${index}"${adminWriteAttributes()}>Zapisz</button>
           <button type="button" class="secondary compact-button" data-assignment-action="cancel-checklist-item-edit">Anuluj</button>
         </div>
       ` : `
         <span class="checklist-item-label">${escapeHtml(item.label || "")}</span>
         <div class="table-actions">
-          <button type="button" class="secondary compact-button" data-assignment-action="edit-checklist-item" data-checklist-index="${index}">Edytuj</button>
-          <button type="button" class="secondary compact-button danger-button" data-assignment-action="remove-checklist-item" data-checklist-index="${index}">Usuń</button>
+          <button type="button" class="secondary compact-button" data-assignment-action="edit-checklist-item" data-checklist-index="${index}"${adminWriteAttributes()}>Edytuj</button>
+          <button type="button" class="secondary compact-button danger-button" data-assignment-action="remove-checklist-item" data-checklist-index="${index}"${adminWriteAttributes()}>Usuń</button>
         </div>
       `}
     </div>
@@ -1735,7 +1888,7 @@ function renderChecklistWorkbookImportPreview() {
               <tr>
                 <td><strong>${escapeHtml(row.sheetName)}</strong></td>
                 <td>
-                  <select class="checklist-import-competition" data-checklist-import-id="${escapeHtml(row.id)}">
+                  <select class="checklist-import-competition" data-checklist-import-id="${escapeHtml(row.id)}"${adminWriteAttributes()}>
                     <option value="">Brak dopasowania konkurencji</option>
                     ${competitions.map(competition => `
                       <option value="${escapeHtml(competition.id)}" ${row.competitionId === competition.id ? "selected" : ""}>${escapeHtml(competition.name)}</option>
@@ -1751,7 +1904,7 @@ function renderChecklistWorkbookImportPreview() {
       </div>
       <div class="action-row">
         <button type="button" class="secondary" data-assignment-action="cancel-checklist-import">Anuluj import</button>
-        <button type="button" data-assignment-action="confirm-checklist-import" ${validRows.length ? "" : "disabled"}>Importuj checklisty</button>
+          <button type="button" data-assignment-action="confirm-checklist-import" ${validRows.length ? "" : "disabled"}${adminWriteAttributes()}>Importuj checklisty</button>
       </div>
     </div>
   `;
@@ -1810,24 +1963,24 @@ function renderJudgeAssignmentDetail(container) {
       </div>
       <div class="admin-header-actions">
         <button type="button" class="secondary compact-button" data-assignments-view="judges">Wróć do listy</button>
-        <button type="button" class="compact-button" data-assignment-action="save-judge" data-judge-id="${escapeHtml(judge.id)}">Zapisz</button>
+        <button type="button" class="compact-button" data-assignment-action="save-judge" data-judge-id="${escapeHtml(judge.id)}"${adminWriteAttributes()}>Zapisz</button>
       </div>
     </div>
     <div id="assignmentMessage" class="bulk-message" role="alert" hidden></div>
     <div class="assignment-check-list">
       <label class="assignment-check-row">
-        <input type="radio" name="judgeCompetition" value="" ${assignment ? "" : "checked"}>
+          <input type="radio" name="judgeCompetition" value="" ${assignment ? "" : "checked"}${adminWriteAttributes()}>
         <span><strong>Brak przydziału</strong></span>
       </label>
       ${competitions.map(competition => `
         <label class="assignment-check-row">
-          <input type="radio" name="judgeCompetition" value="${escapeHtml(competition.id)}" ${assignment?.competitionId === competition.id ? "checked" : ""}>
+          <input type="radio" name="judgeCompetition" value="${escapeHtml(competition.id)}" ${assignment?.competitionId === competition.id ? "checked" : ""}${adminWriteAttributes()}>
           <span><strong>${escapeHtml(competition.name)}</strong></span>
         </label>
       `).join("")}
     </div>
     <div class="action-row">
-      <button type="button" data-assignment-action="save-judge" data-judge-id="${escapeHtml(judge.id)}">Zapisz przydział</button>
+      <button type="button" data-assignment-action="save-judge" data-judge-id="${escapeHtml(judge.id)}"${adminWriteAttributes()}>Zapisz przydział</button>
     </div>
   `;
 }
@@ -1857,6 +2010,19 @@ function handleAssignmentsClick(event) {
   const actionButton = event.target.closest("[data-assignment-action]");
   if (!actionButton) return;
   const action = actionButton.dataset.assignmentAction;
+  const writeActions = new Set([
+    "save-competition",
+    "save-judge",
+    "save-competition-settings",
+    "add-checklist-item",
+    "save-checklist-item",
+    "remove-checklist-item",
+    "save-checklist",
+    "confirm-checklist-import",
+    "confirm-competition-import",
+    "delete-competitions"
+  ]);
+  if (writeActions.has(action) && !requireAdminPermission()) return;
   if (action === "competition-detail") {
     ui.selectedAssignmentCompetitionId = actionButton.dataset.competitionId;
     ui.assignmentsView = "competition-detail";
@@ -1935,26 +2101,33 @@ function handleAssignmentsClick(event) {
 
 function handleAssignmentsChange(event) {
   if (event.target.id === "checklistImportInput") {
+    if (!requireAdminPermission()) return;
     readChecklistImportFile(event.target.files?.[0]);
   }
   if (event.target.matches(".checklist-import-competition")) {
+    if (!requireAdminPermission()) return;
     updateChecklistImportCompetition(event.target.dataset.checklistImportId, event.target.value);
   }
   if (event.target.matches(".checklist-item-checked")) {
+    if (!requireAdminPermission()) return;
     updateChecklistItemChecked(Number(event.target.dataset.checklistIndex), event.target.checked);
   }
   if (event.target.id === "competitionImportInput") {
+    if (!requireAdminPermission()) return;
     readCompetitionImportFile(event.target.files?.[0]);
   }
   if (event.target.id === "selectAllCompetitions") {
+    if (!requireAdminPermission()) return;
     toggleAllVisibleCompetitions(event.target.checked);
   }
   if (event.target.matches(".competition-select")) {
+    if (!requireAdminPermission()) return;
     toggleCompetitionSelection(event.target.dataset.competitionId, event.target.checked);
   }
 }
 
 async function saveCompetitionSettings(competitionId) {
+  if (!requireAdminPermission()) return;
   const competition = getCompetitionById(competitionId);
   if (!competition) return;
   const competitionNumber = $("#competitionNumberInput")?.value.trim() || "";
@@ -1991,6 +2164,7 @@ async function saveCompetitionSettings(competitionId) {
 }
 
 async function saveCompetitionChecklist(competitionId) {
+  if (!requireAdminPermission()) return;
   const competition = getCompetitionById(competitionId);
   if (!competition) return;
   syncChecklistDraftFromInputs();
@@ -2022,6 +2196,7 @@ async function saveCompetition(competition) {
 }
 
 function readChecklistImportFile(file) {
+  if (!requireAdminPermission()) return;
   resetChecklistImport();
   if (!file) return;
   const reader = new FileReader();
@@ -2133,6 +2308,7 @@ function updateChecklistImportCompetition(rowId, competitionId) {
 }
 
 async function importChecklistWorkbook() {
+  if (!requireAdminPermission()) return;
   const rows = (ui.checklistImportRows || []).filter(row => row.valid && row.competitionId);
   if (!rows.length) {
     showAssignmentMessage("Brak poprawnie dopasowanych checklist do importu.");
@@ -2171,6 +2347,7 @@ function syncChecklistDraftFromInputs() {
 }
 
 function updateChecklistItemChecked(index, checked) {
+  if (!requireAdminPermission()) return;
   const item = ui.equipmentChecklistDraft[index];
   if (!item) return;
   item.checked = checked;
@@ -2184,6 +2361,7 @@ function showCompetitionSettingsError(message) {
 }
 
 function readCompetitionImportFile(file) {
+  if (!requireAdminPermission()) return;
   ui.competitionImportRows = [];
   ui.competitionImportFileName = file?.name || "";
   ui.competitionImportVisible = true;
@@ -2449,6 +2627,7 @@ function decodeUtf8(bytes) {
 }
 
 async function importValidCompetitions() {
+  if (!requireAdminPermission()) return;
   const rows = (ui.competitionImportRows || []).filter(row => row.valid);
   if (!rows.length) return;
   const now = new Date().toISOString();
@@ -2474,6 +2653,7 @@ async function importValidCompetitions() {
 }
 
 function requestBulkDeleteCompetitions() {
+  if (!requireAdminPermission()) return;
   const competitions = getSelectedCompetitions();
   if (!competitions.length) return;
   const assigned = competitions.filter(competition => getJudgesForCompetition(competition.id).length > 0);
@@ -2489,6 +2669,7 @@ function requestBulkDeleteCompetitions() {
 }
 
 async function softDeleteCompetitions(competitions) {
+  if (!requireAdminPermission()) return;
   const now = new Date().toISOString();
   const ids = new Set(competitions.map(competition => competition.id));
   for (const competition of competitions) {
@@ -2514,6 +2695,7 @@ async function softDeleteCompetitions(competitions) {
 }
 
 async function saveCompetitionAssignments(competitionId) {
+  if (!requireAdminPermission()) return;
   const competition = getCompetitionById(competitionId);
   if (!competition) return;
   const selectedJudgeIds = [...document.querySelectorAll("input[name='competitionJudge']:checked")].map(input => input.value);
@@ -2555,6 +2737,7 @@ async function saveCompetitionAssignments(competitionId) {
 }
 
 async function saveJudgeAssignment(judgeId) {
+  if (!requireAdminPermission()) return;
   const judge = getAssignableJudges().find(user => user.id === judgeId);
   if (!judge) return;
   const selectedCompetitionId = document.querySelector("input[name='judgeCompetition']:checked")?.value || "";
@@ -2586,6 +2769,7 @@ async function saveJudgeAssignment(judgeId) {
 }
 
 async function assignJudgeToCompetition(judgeId, competitionId) {
+  if (!requireAdminPermission()) return;
   const now = new Date().toISOString();
   const existingAssignments = getActiveAssignmentsForJudge(judgeId);
   for (const assignment of existingAssignments) {
@@ -2609,6 +2793,7 @@ async function assignJudgeToCompetition(judgeId, competitionId) {
 }
 
 function handleAssignmentDragStart(event) {
+  if (!requireAdminPermission()) return;
   const chip = event.target.closest("[data-drag-judge-id]");
   if (!chip) return;
   event.dataTransfer.effectAllowed = "move";
@@ -2637,6 +2822,7 @@ function handleAssignmentDragLeave(event) {
 }
 
 async function handleAssignmentDrop(event) {
+  if (!requireAdminPermission()) return;
   const target = event.target.closest("[data-competition-drop-id]");
   if (!target) return;
   event.preventDefault();
@@ -2667,6 +2853,7 @@ function clearAssignmentDragState() {
 }
 
 async function clearJudgeAssignment(judgeId) {
+  if (!requireAdminPermission()) return;
   const now = new Date().toISOString();
   for (const assignment of getActiveAssignmentsForJudge(judgeId)) {
     await repository.upsertDeviceAssignment({ ...assignment, deletedAt: now, deletedBy: getUserId(), updatedAt: now });
@@ -2733,12 +2920,14 @@ function getCompetitionNumber(competition) {
 }
 
 function toggleCompetitionSelection(competitionId, checked) {
+  if (!requireAdminPermission()) return;
   if (checked) ui.selectedCompetitionIds.add(competitionId);
   else ui.selectedCompetitionIds.delete(competitionId);
   renderAdminAssignments();
 }
 
 function toggleAllVisibleCompetitions(checked) {
+  if (!requireAdminPermission()) return;
   const competitions = getAssignableCompetitions();
   if (checked) competitions.forEach(competition => ui.selectedCompetitionIds.add(competition.id));
   else competitions.forEach(competition => ui.selectedCompetitionIds.delete(competition.id));
@@ -2807,7 +2996,7 @@ function compareCompetitionNumbers(left, right) {
 
 function getAssignableJudges() {
   return getDisplayUsers()
-    .filter(user => user.status === "active" && user.roles.includes("judge"))
+    .filter(user => user.status === "active" && userHasRole(user, "judge"))
     .sort((a, b) => getUserFullName(a).localeCompare(getUserFullName(b), "pl"));
 }
 
@@ -2903,9 +3092,9 @@ function renderTeamsList(container) {
         <p class="muted">Zarządzaj zespołami biorącymi udział w mistrzostwach.</p>
       </div>
       <div class="admin-header-actions">
-        <button type="button" class="secondary" data-teams-view="import">Importuj zespoły</button>
-        <button type="button" class="secondary" data-team-action="save-numbers">Zapisz numery</button>
-        <button type="button" id="addTeamBtn" data-teams-view="add">+ Dodaj zespół</button>
+        <button type="button" class="secondary" data-teams-view="import"${adminWriteAttributes()}>Importuj zespoły</button>
+        <button type="button" class="secondary" data-team-action="save-numbers"${adminWriteAttributes()}>Zapisz numery</button>
+        <button type="button" id="addTeamBtn" data-teams-view="add"${adminWriteAttributes()}>+ Dodaj zespół</button>
       </div>
     </div>
     <div id="teamsMessage" class="bulk-message" role="alert" hidden></div>
@@ -2916,7 +3105,7 @@ function renderTeamsList(container) {
           <tr>
             <th class="select-column">
               <label class="select-all-label">
-                <input type="checkbox" id="selectAllTeams" ${areAllVisibleTeamsSelected(teams) ? "checked" : ""}>
+            <input type="checkbox" id="selectAllTeams" ${areAllVisibleTeamsSelected(teams) ? "checked" : ""}${adminWriteAttributes()}>
                 <span>Zaznacz wszystkich</span>
               </label>
             </th>
@@ -2926,15 +3115,15 @@ function renderTeamsList(container) {
         <tbody>
           ${teams.length ? teams.map(team => `
             <tr>
-              <td class="select-column"><input type="checkbox" class="team-admin-select" data-team-id="${escapeHtml(team.id)}" aria-label="Zaznacz zespół ${escapeHtml(team.name)}" ${ui.selectedTeamIds.has(team.id) ? "checked" : ""}></td>
+              <td class="select-column"><input type="checkbox" class="team-admin-select" data-team-id="${escapeHtml(team.id)}" aria-label="Zaznacz zespół ${escapeHtml(team.name)}" ${ui.selectedTeamIds.has(team.id) ? "checked" : ""}${adminWriteAttributes()}></td>
               <td>
-                <input class="team-number-input${ui.invalidTeamNumberIds.has(team.id) ? " invalid" : ""}" data-team-number-id="${escapeHtml(team.id)}" inputmode="numeric" value="${escapeHtml(ui.teamNumberDrafts[team.id] ?? "")}" aria-label="Numer startowy zespołu ${escapeHtml(team.name)}">
+                <input class="team-number-input${ui.invalidTeamNumberIds.has(team.id) ? " invalid" : ""}" data-team-number-id="${escapeHtml(team.id)}" inputmode="numeric" value="${escapeHtml(ui.teamNumberDrafts[team.id] ?? "")}" aria-label="Numer startowy zespołu ${escapeHtml(team.name)}"${adminWriteAttributes()}>
               </td>
               <td>${escapeHtml(team.name)}</td>
               <td>
                 <div class="table-actions icon-actions">
-                  <button type="button" class="secondary compact-button icon-button" data-team-action="edit" data-team-id="${escapeHtml(team.id)}" title="Edytuj" aria-label="Edytuj zespół ${escapeHtml(formatAdminTeamLabel(team))}">✎</button>
-                  <button type="button" class="secondary compact-button danger-button icon-button" data-team-action="delete" data-team-id="${escapeHtml(team.id)}" title="Usuń" aria-label="Usuń zespół ${escapeHtml(formatAdminTeamLabel(team))}">🗑</button>
+                  <button type="button" class="secondary compact-button icon-button" data-team-action="edit" data-team-id="${escapeHtml(team.id)}" title="Edytuj" aria-label="Edytuj zespół ${escapeHtml(formatAdminTeamLabel(team))}"${adminWriteAttributes()}>✎</button>
+                  <button type="button" class="secondary compact-button danger-button icon-button" data-team-action="delete" data-team-id="${escapeHtml(team.id)}" title="Usuń" aria-label="Usuń zespół ${escapeHtml(formatAdminTeamLabel(team))}"${adminWriteAttributes()}>🗑</button>
                 </div>
               </td>
             </tr>
@@ -2946,16 +3135,16 @@ function renderTeamsList(container) {
       ${teams.length ? teams.map(team => `
         <article class="user-card team-admin-card">
           <label class="user-card-select">
-            <input type="checkbox" class="team-admin-select" data-team-id="${escapeHtml(team.id)}" aria-label="Zaznacz zespół ${escapeHtml(team.name)}" ${ui.selectedTeamIds.has(team.id) ? "checked" : ""}>
+            <input type="checkbox" class="team-admin-select" data-team-id="${escapeHtml(team.id)}" aria-label="Zaznacz zespół ${escapeHtml(team.name)}" ${ui.selectedTeamIds.has(team.id) ? "checked" : ""}${adminWriteAttributes()}>
             <span>Zaznacz</span>
           </label>
           <h3>${escapeHtml(team.name)}</h3>
           <dl>
-            <div><dt>Nr</dt><dd><input class="team-number-input${ui.invalidTeamNumberIds.has(team.id) ? " invalid" : ""}" data-team-number-id="${escapeHtml(team.id)}" inputmode="numeric" value="${escapeHtml(ui.teamNumberDrafts[team.id] ?? "")}" aria-label="Numer startowy zespołu ${escapeHtml(team.name)}"></dd></div>
+            <div><dt>Nr</dt><dd><input class="team-number-input${ui.invalidTeamNumberIds.has(team.id) ? " invalid" : ""}" data-team-number-id="${escapeHtml(team.id)}" inputmode="numeric" value="${escapeHtml(ui.teamNumberDrafts[team.id] ?? "")}" aria-label="Numer startowy zespołu ${escapeHtml(team.name)}"${adminWriteAttributes()}></dd></div>
           </dl>
           <div class="table-actions">
-            <button type="button" class="secondary compact-button" data-team-action="edit" data-team-id="${escapeHtml(team.id)}">Edytuj</button>
-            <button type="button" class="secondary compact-button danger-button" data-team-action="delete" data-team-id="${escapeHtml(team.id)}">Usuń</button>
+            <button type="button" class="secondary compact-button" data-team-action="edit" data-team-id="${escapeHtml(team.id)}"${adminWriteAttributes()}>Edytuj</button>
+            <button type="button" class="secondary compact-button danger-button" data-team-action="delete" data-team-id="${escapeHtml(team.id)}"${adminWriteAttributes()}>Usuń</button>
           </div>
         </article>
       `).join("") : `<div class="empty-state">Brak zespołów.</div>`}
@@ -2973,8 +3162,8 @@ function renderTeamBulkActions() {
     <div class="bulk-actions-bar">
       <strong>Zaznaczono: ${count}</strong>
       <div class="bulk-actions">
-        <button type="button" class="secondary compact-button" data-team-action="clear-numbers">Usuń numer</button>
-        <button type="button" class="secondary compact-button danger-button" data-team-action="bulk-delete">Usuń</button>
+        <button type="button" class="secondary compact-button" data-team-action="clear-numbers"${adminWriteAttributes()}>Usuń numer</button>
+        <button type="button" class="secondary compact-button danger-button" data-team-action="bulk-delete"${adminWriteAttributes()}>Usuń</button>
       </div>
     </div>
   `;
@@ -3006,7 +3195,7 @@ function renderTeamForm(container, team) {
         </div>
         <div class="action-row">
           <button type="button" class="secondary" data-teams-view="list">Anuluj</button>
-          <button type="submit">${isEdit ? "Zapisz zmiany" : "Dodaj zespół"}</button>
+          <button type="submit"${adminWriteAttributes()}>${isEdit ? "Zapisz zmiany" : "Dodaj zespół"}</button>
         </div>
       </form>
     </div>
@@ -3053,7 +3242,7 @@ function renderTeamsImport(container) {
         </div>
         <div class="action-row">
           <button type="button" class="secondary" data-teams-view="list">Anuluj</button>
-          <button type="button" data-team-action="import-confirm" ${validRows.length ? "" : "disabled"}>Importuj ${validRows.length} ${pluralizeTeams(validRows.length)}</button>
+          <button type="button" data-team-action="import-confirm" ${validRows.length ? "" : "disabled"}${adminWriteAttributes()}>Importuj ${validRows.length} ${pluralizeTeams(validRows.length)}</button>
         </div>
       ` : `
         <div class="import-columns">
@@ -3069,6 +3258,7 @@ function renderTeamsImport(container) {
 function handleTeamsClick(event) {
   const viewButton = event.target.closest("[data-teams-view]");
   if (viewButton) {
+    if (viewButton.dataset.teamsView !== "list" && !requireAdminPermission()) return;
     ui.teamsView = viewButton.dataset.teamsView;
     if (ui.teamsView === "list") {
       resetTeamsHome();
@@ -3078,6 +3268,7 @@ function handleTeamsClick(event) {
   }
   const actionButton = event.target.closest("[data-team-action]");
   if (!actionButton) return;
+  if (!requireAdminPermission()) return;
   const action = actionButton.dataset.teamAction;
   if (action === "edit") {
     ui.editingTeamId = actionButton.dataset.teamId;
@@ -3104,22 +3295,27 @@ function handleTeamsClick(event) {
 function handleTeamsSubmit(event) {
   if (!event.target.matches("#teamForm")) return;
   event.preventDefault();
+  if (!requireAdminPermission()) return;
   saveTeamFromForm();
 }
 
 function handleTeamsChange(event) {
   if (event.target.id === "teamImportFileInput") {
+    if (!requireAdminPermission()) return;
     readTeamImportFile(event.target.files?.[0]);
   }
   if (event.target.id === "selectAllTeams") {
+    if (!requireAdminPermission()) return;
     syncTeamNumberDraftsFromInputs();
     toggleAllVisibleTeams(event.target.checked);
   }
   if (event.target.matches(".team-admin-select")) {
+    if (!requireAdminPermission()) return;
     syncTeamNumberDraftsFromInputs();
     toggleTeamSelection(event.target.dataset.teamId, event.target.checked);
   }
   if (event.target.matches(".team-number-input")) {
+    if (!requireAdminPermission()) return;
     ui.teamNumberDrafts[event.target.dataset.teamNumberId] = event.target.value.trim();
     ui.invalidTeamNumberIds.delete(event.target.dataset.teamNumberId);
     event.target.classList.remove("invalid");
@@ -3127,6 +3323,7 @@ function handleTeamsChange(event) {
 }
 
 async function saveTeamFromForm() {
+  if (!requireAdminPermission()) return;
   const teamId = $("#teamIdInput").value || createLocalTeamId();
   const isEdit = Boolean(ui.editingTeamId);
   const previous = getAdminTeams().find(team => team.id === teamId);
@@ -3174,6 +3371,7 @@ function showTeamFormError(message) {
 }
 
 function requestDeleteTeam(teamId) {
+  if (!requireAdminPermission()) return;
   const team = getAdminTeams().find(item => item.id === teamId);
   if (!team) return;
   showConfirmDialog({
@@ -3185,6 +3383,7 @@ function requestDeleteTeam(teamId) {
 }
 
 async function softDeleteTeam(team) {
+  if (!requireAdminPermission()) return;
   const now = new Date().toISOString();
   await repository.upsertTeam({
     ...team,
@@ -3200,6 +3399,7 @@ async function softDeleteTeam(team) {
 }
 
 function requestBulkDeleteTeams() {
+  if (!requireAdminPermission()) return;
   const teams = getSelectedTeams();
   if (!teams.length) return;
   showConfirmDialog({
@@ -3211,6 +3411,7 @@ function requestBulkDeleteTeams() {
 }
 
 async function softDeleteTeams(teams) {
+  if (!requireAdminPermission()) return;
   const now = new Date().toISOString();
   for (const team of teams) {
     await repository.upsertTeam({
@@ -3228,6 +3429,7 @@ async function softDeleteTeams(teams) {
 }
 
 function requestClearTeamNumbers() {
+  if (!requireAdminPermission()) return;
   syncTeamNumberDraftsFromInputs();
   const teams = getSelectedTeams();
   if (!teams.length) return;
@@ -3240,6 +3442,7 @@ function requestClearTeamNumbers() {
 }
 
 async function clearTeamNumbers(teams) {
+  if (!requireAdminPermission()) return;
   const now = new Date().toISOString();
   for (const team of teams) {
     await repository.upsertTeam({
@@ -3276,6 +3479,7 @@ function syncTeamNumberDraftsFromInputs() {
 }
 
 async function saveTeamNumbers() {
+  if (!requireAdminPermission()) return;
   syncTeamNumberDraftsFromInputs();
   const teams = getAdminTeams();
   const validation = validateTeamNumberDrafts(teams);
@@ -3332,6 +3536,7 @@ function showTeamMessage(message, type = "error") {
 }
 
 function readTeamImportFile(file) {
+  if (!requireAdminPermission()) return;
   ui.teamImportRows = [];
   ui.teamImportFileName = file?.name || "";
   if (!file) {
@@ -3394,6 +3599,7 @@ function buildTeamImportPreview(rows) {
 }
 
 async function importValidTeams() {
+  if (!requireAdminPermission()) return;
   const rows = (ui.teamImportRows || []).filter(row => row.valid);
   if (!rows.length) return;
   const now = new Date().toISOString();
@@ -3834,6 +4040,7 @@ async function approveAssessment() {
 }
 
 async function trySync() {
+  if (!requireSyncPermission()) return;
   const results = await syncService.flush();
   await renderAll();
   const failed = results.find(item => item.status === SyncStatus.FAILED || item.status === SyncStatus.CONFLICT);
@@ -4575,6 +4782,7 @@ function handleMessagesClick(event) {
   if (!actionButton) return;
   const action = actionButton.dataset.messageAction;
   if (action === "new") {
+    if (!requireMessagePermission()) return;
     ui.messageComposerOpen = true;
     ui.messageUnconfirmedId = null;
     renderMessages();
@@ -4605,6 +4813,7 @@ function setMessageCompetitionPickerMode(audienceType) {
 async function handleMessagesSubmit(event) {
   if (event.target.id !== "messageForm") return;
   event.preventDefault();
+  if (!requireMessagePermission()) return;
   const title = $("#messageTitleInput").value.trim();
   const body = $("#messageBodyInput").value.trim();
   const priority = $("#messagePriorityInput").value;
@@ -4958,7 +5167,7 @@ function isAssignmentFilled({ teamId, competitionId, competitionPartId, cardTemp
 }
 
 function isVisibleForJudge(competition, part, template) {
-  if (ui.appMode === "admin") return true;
+  if (hasSessionRole("admin")) return true;
   const assigned = ui.judgeAssignment;
   if (!assigned) return true;
   return (!assigned.competitionId || assigned.competitionId === competition.id)
@@ -4967,7 +5176,7 @@ function isVisibleForJudge(competition, part, template) {
 }
 
 function getTaskInfo(assignment) {
-  const assigned = ui.appMode === "judge" ? ui.judgeAssignment : null;
+  const assigned = ui.appMode === "judge" && !hasSessionRole("admin") ? ui.judgeAssignment : null;
   const number = assigned?.taskNumber || assignment?.part?.code || assignment?.competition?.code || "";
   const name = assigned?.taskName || assignment?.competition?.name || assignment?.template?.name || "--";
   return {
@@ -5027,7 +5236,10 @@ function formatEventDatePart(value) {
 }
 
 function normalizeAppMode(value) {
-  return value === "admin" ? "admin" : "judge";
+  const normalized = normalizeRole(value);
+  if (normalized === "admin") return "admin";
+  if (normalized === "office") return "office";
+  return "judge";
 }
 
 function restoreUiState() {

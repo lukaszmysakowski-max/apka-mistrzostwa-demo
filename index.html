@@ -21,9 +21,10 @@
       <div id="loginModeStep" class="login-step">
         <h1>WYBIERZ TRYB PRACY</h1>
         <div class="login-mode-switch" role="group" aria-label="Tryb logowania">
-          <button type="button" class="login-mode admin-mode" data-login-mode="admin">ADMIN</button>
+          <button type="button" class="login-mode office-mode" data-login-mode="office">BIURO</button>
           <button type="button" class="login-mode judge-mode" data-login-mode="judge">SĘDZIA</button>
         </div>
+        <button type="button" class="admin-login-link" data-login-mode="admin">⚙ Administrator</button>
       </div>
 
       <form id="loginForm" class="login-form" hidden>
@@ -55,7 +56,7 @@
         <span id="headerEventMeta">Barczewo | 19–22.06.2026</span>
       </div>
     </button>
-    <button type="button" class="event-edit-button" id="eventEditBtn" aria-label="Edytuj dane zawodów" title="Edytuj dane zawodów">✎</button>
+    <button type="button" class="event-edit-button" id="eventEditBtn" aria-label="Edytuj dane zawodów" title="Edytuj dane zawodów" data-admin-write>✎</button>
     <button type="button" class="admin-menu-toggle" id="adminMenuToggle" aria-expanded="false">
       <span aria-hidden="true">☰</span>
       Menu
@@ -63,6 +64,11 @@
     <div class="session-panel">
       <span class="session-label">Zalogowany jako</span>
       <div class="mode-pill" id="modePill">Tryb</div>
+      <div class="context-switcher" id="contextSwitcher" hidden>
+        <button type="button" data-context-mode="admin">Administracja</button>
+        <button type="button" data-context-mode="office">Biuro</button>
+        <button type="button" data-context-mode="judge">Sędzia</button>
+      </div>
     </div>
   </header>
 
@@ -89,8 +95,8 @@
                 <h2>Użytkownicy i uprawnienia</h2>
               </div>
               <div class="admin-header-actions">
-                <button type="button" id="addUserBtn">+ Dodaj użytkownika</button>
-                <button type="button" class="secondary" id="importUsersBtn">Importuj użytkowników</button>
+                <button type="button" id="addUserBtn" data-admin-write>+ Dodaj użytkownika</button>
+                <button type="button" class="secondary" id="importUsersBtn" data-admin-write>Importuj użytkowników</button>
               </div>
             </div>
 
@@ -140,6 +146,7 @@
                 <fieldset class="checkbox-group">
                   <legend>Uprawnienia</legend>
                   <label><input type="checkbox" id="roleJudgeInput" value="judge"> Sędzia</label>
+                  <label><input type="checkbox" id="roleOfficeInput" value="office"> Biuro</label>
                   <label><input type="checkbox" id="roleAdminInput" value="admin"> Administrator</label>
                 </fieldset>
                 <fieldset class="status-group">
@@ -175,19 +182,21 @@
             <div id="bulkActionsBar" class="bulk-actions-bar" hidden>
               <strong>Zaznaczono: <span id="selectedUsersCount">0</span></strong>
               <div class="bulk-actions">
-                <button type="button" class="secondary compact-button" data-bulk-menu="roles">Uprawnienia</button>
-                <button type="button" class="secondary compact-button" data-bulk-menu="status">Status</button>
-                <button type="button" class="secondary compact-button danger-button" data-bulk-action="delete">Usuń</button>
+                <button type="button" class="secondary compact-button" data-bulk-menu="roles" data-admin-write>Uprawnienia</button>
+                <button type="button" class="secondary compact-button" data-bulk-menu="status" data-admin-write>Status</button>
+                <button type="button" class="secondary compact-button danger-button" data-bulk-action="delete" data-admin-write>Usuń</button>
               </div>
               <div id="bulkRolesMenu" class="bulk-menu" hidden>
-                <button type="button" data-bulk-action="add-role" data-role="judge">Dodaj uprawnienie „Sędzia”</button>
-                <button type="button" class="secondary" data-bulk-action="remove-role" data-role="judge">Usuń uprawnienie „Sędzia”</button>
-                <button type="button" data-bulk-action="add-role" data-role="admin">Dodaj uprawnienie „Administrator”</button>
-                <button type="button" class="secondary" data-bulk-action="remove-role" data-role="admin">Usuń uprawnienie „Administrator”</button>
+                <button type="button" data-bulk-action="add-role" data-role="judge" data-admin-write>Dodaj uprawnienie „Sędzia”</button>
+                <button type="button" class="secondary" data-bulk-action="remove-role" data-role="judge" data-admin-write>Usuń uprawnienie „Sędzia”</button>
+                <button type="button" data-bulk-action="add-role" data-role="office" data-admin-write>Dodaj uprawnienie „Biuro”</button>
+                <button type="button" class="secondary" data-bulk-action="remove-role" data-role="office" data-admin-write>Usuń uprawnienie „Biuro”</button>
+                <button type="button" data-bulk-action="add-role" data-role="admin" data-admin-write>Dodaj uprawnienie „Administrator”</button>
+                <button type="button" class="secondary" data-bulk-action="remove-role" data-role="admin" data-admin-write>Usuń uprawnienie „Administrator”</button>
               </div>
               <div id="bulkStatusMenu" class="bulk-menu" hidden>
-                <button type="button" data-bulk-action="set-status" data-status="active">Ustaw jako aktywnych</button>
-                <button type="button" class="secondary" data-bulk-action="set-status" data-status="inactive">Ustaw jako nieaktywnych</button>
+                <button type="button" data-bulk-action="set-status" data-status="active" data-admin-write>Ustaw jako aktywnych</button>
+                <button type="button" class="secondary" data-bulk-action="set-status" data-status="inactive" data-admin-write>Ustaw jako nieaktywnych</button>
               </div>
             </div>
 
@@ -197,7 +206,7 @@
                   <tr>
                     <th class="select-column">
                       <label class="select-all-label">
-                        <input type="checkbox" id="selectAllUsers">
+                        <input type="checkbox" id="selectAllUsers" data-admin-write>
                         <span>Zaznacz wszystkich</span>
                       </label>
                     </th>
